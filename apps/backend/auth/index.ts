@@ -143,10 +143,13 @@ fastify.get("/auth/health", async (request, reply) => {
   reply.send({ status: "ok", service: "auth" });
 });
 
-fastify.listen({ port: 3000 }, function (err, address) {
-  if (err) {
-    fastify.log.error(err);
-    process.exit(1);
+fastify.listen(
+  { port: Number(process.env.PORT) || 3000 },
+  function (err, address) {
+    if (err) {
+      fastify.log.error(err);
+      process.exit(1);
+    }
+    fastify.log.info(`Microservice Auth démarré sur ${address}`);
   }
-  fastify.log.info(`Microservice Auth démarré sur ${address}`);
-});
+);
