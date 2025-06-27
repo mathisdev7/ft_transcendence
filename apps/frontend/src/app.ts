@@ -33,7 +33,7 @@ export class App {
   }
 
   private clearContainer(): void {
-    this.container.innerHTML = "";
+    this.currentForm && (this.container.innerHTML = "");
     this.currentForm = null;
   }
 
