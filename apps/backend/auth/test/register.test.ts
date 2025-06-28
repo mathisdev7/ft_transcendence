@@ -20,13 +20,14 @@ describe("register endpoint", () => {
   });
 
   it("should register a new user successfully", async () => {
+    const timestamp = Date.now();
     const response = await fetch(`${baseUrl}/auth/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        email: "test@example.com",
+        email: `test-${timestamp}@example.com`,
         password: "testpassword123",
       }),
     });
@@ -41,13 +42,16 @@ describe("register endpoint", () => {
   });
 
   it("should fail with duplicate email", async () => {
+    const timestamp = Date.now();
+    const duplicateEmail = `duplicate-${timestamp}@example.com`;
+
     await fetch(`${baseUrl}/auth/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        email: "duplicate@example.com",
+        email: duplicateEmail,
         password: "password123",
       }),
     });
@@ -58,7 +62,7 @@ describe("register endpoint", () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        email: "duplicate@example.com",
+        email: duplicateEmail,
         password: "anotherpassword",
       }),
     });
@@ -92,13 +96,14 @@ describe("register endpoint", () => {
   });
 
   it("should fail with missing password", async () => {
+    const timestamp = Date.now();
     const response = await fetch(`${baseUrl}/auth/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        email: "test2@example.com",
+        email: `test2-${timestamp}@example.com`,
       }),
     });
 
@@ -111,13 +116,14 @@ describe("register endpoint", () => {
   });
 
   it("should fail with weak password", async () => {
+    const timestamp = Date.now();
     const response = await fetch(`${baseUrl}/auth/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        email: "test3@example.com",
+        email: `test3-${timestamp}@example.com`,
         password: "123",
       }),
     });

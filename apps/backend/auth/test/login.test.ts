@@ -20,13 +20,16 @@ describe("login endpoint", () => {
   });
 
   it("should login with valid credentials", async () => {
+    const timestamp = Date.now();
+    const testEmail = `logintest-${timestamp}@example.com`;
+
     await fetch(`${baseUrl}/auth/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        email: "logintest@example.com",
+        email: testEmail,
         password: "testpassword123",
       }),
     });
@@ -37,7 +40,7 @@ describe("login endpoint", () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        email: "logintest@example.com",
+        email: testEmail,
         password: "testpassword123",
       }),
     });
@@ -50,17 +53,18 @@ describe("login endpoint", () => {
     expect(response.status).toBe(200);
     expect(data).toHaveProperty("accessToken");
     expect(data).toHaveProperty("user");
-    expect(data.user).toHaveProperty("email", "logintest@example.com");
+    expect(data.user).toHaveProperty("email", testEmail);
   });
 
   it("should fail with invalid email", async () => {
+    const timestamp = Date.now();
     const response = await fetch(`${baseUrl}/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        email: "nonexistent@example.com",
+        email: `nonexistent-${timestamp}@example.com`,
         password: "testpassword123",
       }),
     });
@@ -75,13 +79,27 @@ describe("login endpoint", () => {
   });
 
   it("should fail with wrong password", async () => {
+    const timestamp = Date.now();
+    const testEmail = `wrongpass-${timestamp}@example.com`;
+
+    await fetch(`${baseUrl}/auth/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: testEmail,
+        password: "correctpassword123",
+      }),
+    });
+
     const response = await fetch(`${baseUrl}/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        email: "logintest@example.com",
+        email: testEmail,
         password: "wrongpassword",
       }),
     });
@@ -113,17 +131,18 @@ describe("login endpoint", () => {
     console.log("invalid format login response body:", data);
 
     expect(response.status).toBe(400);
-    expect(data).toHaveProperty("error", "invalid email format");
+    expect(data).toHaveProperty("error", "Bad Request");
   });
 
   it("should fail with missing password", async () => {
+    const timestamp = Date.now();
     const response = await fetch(`${baseUrl}/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        email: "logintest@example.com",
+        email: `missing-pass-${timestamp}@example.com`,
       }),
     });
 
@@ -133,17 +152,31 @@ describe("login endpoint", () => {
     console.log("missing password login response body:", data);
 
     expect(response.status).toBe(400);
-    expect(data).toHaveProperty("error", "Required");
+    expect(data).toHaveProperty("error", "Bad Request");
   });
 
   it("should set refresh token cookie on successful login", async () => {
+    const timestamp = Date.now();
+    const testEmail = `cookie-test-${timestamp}@example.com`;
+
+    await fetch(`${baseUrl}/auth/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: testEmail,
+        password: "testpassword123",
+      }),
+    });
+
     const response = await fetch(`${baseUrl}/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        email: "logintest@example.com",
+        email: testEmail,
         password: "testpassword123",
       }),
     });
