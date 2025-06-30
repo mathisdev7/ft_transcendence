@@ -2,7 +2,7 @@ FROM debian:bookworm
 
 # install necessary tools
 RUN	apt-get update && \
-	apt-get install -y openjdk-17-jdk && \
+	# suppression de cette ligne -> apt-get install -y openjdk-17-jdk && \
 	apt-get install -y wget && \
 	apt-get install -y curl && \
 	apt-get install -y gnupg && \
@@ -11,18 +11,18 @@ RUN	apt-get update && \
 	rm -rf /var/lib/apt/lists/*
 
 # set up JAVA env
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-ENV PATH=$JAVA_HOME/bin:$PATH
+# delete : ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+# delete : ENV PATH=$JAVA_HOME/bin:$PATH
 
 # Download and decompress Elasticsearch
-RUN wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-9.0.3-linux-x86_64.tar.gz && \
-	tar -xzf elasticsearch-9.0.3-linux-x86_64.tar.gz
+RUN wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-8.18.2-linux-aarch64.tar.gz && \
+    tar -xzf elasticsearch-8.18.2-linux-aarch64.tar.gz && \
 
-RUN mv elasticsearch-9.0.3 /usr/share/elasticsearch && \
-	rm elasticsearch-9.0.3-linux-x86_64.tar.gz
+RUN mv elasticsearch-8.18.2 /usr/share/elasticsearch && \
+    rm elasticsearch-8.18.2-linux-aarch64.tar.gz
 
 # Copier le fichier de config par défaut (optionnel)
-COPY elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
+#COPY elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
 
 # Donner les droits (pour que le processus puisse écrire dans les dossiers)
 #RUN useradd -m elasticsearch && \
