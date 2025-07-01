@@ -18,7 +18,7 @@ RUN mv elasticsearch-8.18.2 /usr/share/elasticsearch && \
     rm elasticsearch-8.18.2-linux-aarch64.tar.gz
 
 # Copy .yml file
-COPY test.yml /usr/share/elasticsearch/config/elasticsearch.yml
+COPY elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
 
 # Give access to a specific user (elasticsearch refuses to be root)
 RUN useradd -m elasticsearch && \
