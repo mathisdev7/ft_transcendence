@@ -17,6 +17,19 @@ RUN wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-8.18
 RUN mv elasticsearch-8.18.2 /usr/share/elasticsearch && \
     rm elasticsearch-8.18.2-linux-aarch64.tar.gz
 
+# Create elasticsearch user with specific UID/GID for consistency
+RUN groupadd -g 1000 elasticsearch && \
+    useradd -u 1000 -g 1000 -m -s /bin/bash elasticsearch
+
+# Create necessary directories and set permissions
+RUN mkdir -p /usr/share/elasticsearch/data && \
+    mkdir -p /usr/share/elasticsearch/logs && \
+    mkdir -p /usr/share/elasticsearch/config/certs && \
+    chown -R elasticsearch:elasticsearch /usr/share/elasticsearch && \
+    chmod -R 755 /usr/share/elasticsearch && \
+    chmod -R 777 /usr/share/elasticsearch/data && \
+    chmod -R 777 /usr/share/elasticsearch/logs
+
 # Copy .yml file
 COPY elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
 
