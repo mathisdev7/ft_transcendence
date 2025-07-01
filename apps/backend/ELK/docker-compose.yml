@@ -1,3 +1,38 @@
+# services:
+#   elasticsearch:
+#     container_name: elasticsearch
+#     build:
+#       context: Elasticsearch
+#       dockerfile: Dockerfile
+#     environment:
+#       - ES_JAVA_OPTS=-Xms512m -Xmx512m
+#       - xpack.security.enabled=true
+#       - ELASTIC_PASSWORD=mdp123
+#       - discovery.type=single-node
+#     ports:
+#       - "9200:9200"
+#       - "9300:9300"
+#     volumes:
+#       - esdata:/usr/share/elasticsearch/data
+
+
+#   kibana:
+#     image: docker.elastic.co/kibana/kibana:8.18.2
+#     container_name: kibana
+#     environment:
+#       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+#       - ELASTICSEARCH_USERNAME=kibana_system
+#       - ELASTICSEARCH_PASSWORD=kibana_pass
+#     ports:
+#       - "5601:5601"
+#     depends_on:
+#       - elasticsearch
+
+# volumes:
+#   esdata:
+
+
+
 services:
   elasticsearch:
     container_name: elasticsearch
@@ -6,27 +41,12 @@ services:
       dockerfile: Dockerfile
     environment:
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
-      - xpack.security.enabled=true
-      - ELASTIC_PASSWORD=mdp123
       - discovery.type=single-node
+      - xpack.security.enabled=false
     ports:
       - "9200:9200"
-      - "9300:9300"
     volumes:
       - esdata:/usr/share/elasticsearch/data
-
-
-  kibana:
-    image: docker.elastic.co/kibana/kibana:8.18.2
-    container_name: kibana
-    environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-      - ELASTICSEARCH_USERNAME=kibana_system
-      - ELASTICSEARCH_PASSWORD=kibana_pass
-    ports:
-      - "5601:5601"
-    depends_on:
-      - elasticsearch
 
 volumes:
   esdata:
