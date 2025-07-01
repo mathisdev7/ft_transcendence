@@ -19,7 +19,8 @@ RUN mv elasticsearch-8.18.2 /usr/share/elasticsearch && \
 
 # Create elasticsearch user with specific UID/GID for consistency
 RUN groupadd -g 1000 elasticsearch && \
-    useradd -u 1000 -g 1000 -m -s /bin/bash elasticsearch
+    useradd -u 1000 -g 1000 -m -s /bin/bash elasticsearch && \
+	chown -R elasticsearch:elasticsearch /usr/share/elasticsearch
 
 # Create necessary directories and set permissions
 RUN mkdir -p /usr/share/elasticsearch/data && \
@@ -34,8 +35,7 @@ RUN mkdir -p /usr/share/elasticsearch/data && \
 COPY elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
 
 # Give access to a specific user (elasticsearch refuses to be root)
-RUN useradd -m elasticsearch && \
-    chown -R elasticsearch:elasticsearch /usr/share/elasticsearch
+
 
 USER elasticsearch
 
