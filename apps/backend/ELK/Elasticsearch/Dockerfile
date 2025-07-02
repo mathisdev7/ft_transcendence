@@ -25,8 +25,9 @@ RUN groupadd -g 1000 elasticsearch && \
 # Create necessary directories and set permissions
 RUN mkdir -p /usr/share/elasticsearch/data && \
     mkdir -p /usr/share/elasticsearch/logs && \
-    mkdir -p /usr/share/elasticsearch/config/certs && \
-    chown -R elasticsearch:elasticsearch /usr/share/elasticsearch && \
+    mkdir -p /usr/share/elasticsearch/config/certs
+
+RUN chown -R elasticsearch:elasticsearch /usr/share/elasticsearch && \
     chmod -R 755 /usr/share/elasticsearch && \
     chmod -R 777 /usr/share/elasticsearch/data && \
     chmod -R 777 /usr/share/elasticsearch/logs
