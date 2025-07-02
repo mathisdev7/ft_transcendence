@@ -96,16 +96,16 @@ xpack.security.enrollment.enabled: true
 # Enable encryption for HTTP API client connections, such as Kibana, Logstash, and Agents
 xpack.security.http.ssl:
   enabled: true
-  key: certs/elasticsearch.key
-  certificate: certs/elasticsearch.crt
-  certificate_authorities: [ "certs/ca/ca.crt" ]
+  key: /usr/share/elasticsearch/certs/elasticsearch/elasticsearch.key
+  certificate: /usr/share/elasticsearch/certs/elasticsearch/elasticsearch.crt
+  certificate_authorities: [ "/usr/share/elasticsearch/certs/ca/ca.crt" ]
 
 xpack.security.transport.ssl:
   enabled: true
   verification_mode: certificate
-  key: certs/elasticsearch.key
-  certificate: certs/elasticsearch.crt
-  certificate_authorities: [ "certs/ca/ca.crt" ]
+  key: /usr/share/elasticsearch/certs/elasticsearch/elasticsearch.key
+  certificate: /usr/share/elasticsearch/certs/elasticsearch/elasticsearch.crt
+  certificate_authorities: [ "/usr/share/elasticsearch/certs/ca/ca.crt" ]
 # Create a new cluster with the current node only
 # Additional nodes can still join the cluster later
 
