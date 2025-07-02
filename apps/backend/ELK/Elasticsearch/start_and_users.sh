@@ -10,8 +10,10 @@ until curl -k -u elastic:$ELASTIC_PASSWORD https://localhost:9200; do
 done
 
 # Create users
-bin/elasticsearch-users useradd kibana_system -p "$KIBANA_PASSWORD" -r kibana_system
-bin/elasticsearch-users useradd logstash_system -p "$LOGSTASH_PASSWORD" -r logstash_system
+
+# Définir les mots de passe des comptes système
+bin/elasticsearch-reset-password -u kibana_system -i -b -s -f -p "$KIBANA_PASSWORD"
+bin/elasticsearch-reset-password -u logstash_system -i -b -s -f -p "$LOGSTASH_PASSWORD"
 
 # Attendre le processus principal Elasticsearch
 wait
