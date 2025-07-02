@@ -72,7 +72,6 @@ http.port: 9200
 # Bootstrap the cluster using an initial set of master-eligible nodes:
 #
 cluster.initial_master_nodes: ["node-1"]
-discovery.seed_hosts: ["node-1"]
 #
 # For more information, consult the discovery and cluster formation module documentation.
 #
@@ -92,7 +91,7 @@ discovery.seed_hosts: ["node-1"]
 # Enable security features
 xpack.security.enabled: true
 
-xpack.security.enrollment.enabled: true
+xpack.security.enrollment.enabled: false
 
 # Enable encryption for HTTP API client connections, such as Kibana, Logstash, and Agents
 xpack.security.http.ssl:
