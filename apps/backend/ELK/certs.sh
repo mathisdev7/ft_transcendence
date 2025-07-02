@@ -41,7 +41,10 @@ openssl x509 -req -in certs/logstash/logstash.csr -CA certs/ca/ca.crt -CAkey cer
   -CAcreateserial -out certs/logstash/logstash.crt -days 365 -sha256
 
 
-
 cp certs/elasticsearch/elasticsearch.key certs/
 cp certs/elasticsearch/elasticsearch.crt certs/
 cp certs/ca/ca.crt certs/
+
+
+chmod 644 certs/*.crt certs/*.key
+chown 1000:0 certs/*.crt certs/*.key
