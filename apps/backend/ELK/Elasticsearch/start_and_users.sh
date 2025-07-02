@@ -10,6 +10,8 @@ until curl -k -u elastic:$ELASTIC_PASSWORD https://localhost:9200; do
 done
 
 
+echo "$ELASTIC_PASSWORD" | ./bin/elasticsearch-reset-password -u elastic -b -i
+
 
 # Reset passwords via REST API
 curl -k -X PUT "https://localhost:9200/_security/user/kibana_system/_password" \

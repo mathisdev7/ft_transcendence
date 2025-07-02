@@ -7,7 +7,7 @@ services:
     environment:
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
       - xpack.security.enabled=true
-      - ELASTIC_PASSWORD=mdp123.  # A mettre dans le .env
+      - ELASTIC_PASSWORD=mdp123  # A mettre dans le .env
       - KIBANA_PASSWORD=mdpkibana # .env
       - LOGSTASH_PASSWORD=mdplogstash #.env
       - discovery.type=single-node
