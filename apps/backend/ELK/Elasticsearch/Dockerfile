@@ -35,9 +35,11 @@ RUN chown -R elasticsearch:elasticsearch /usr/share/elasticsearch && \
 # Copy .yml file
 COPY elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
 
+# Copy starting script and make sure u can use it
+COPY start_and_users.sh /usr/share/elasticsearch/start_and_users.sh
+RUN chmod +x /usr/share/elasticsearch/start_and_users.sh
+
 # Give access to a specific user (elasticsearch refuses to be root)
-
-
 USER elasticsearch
 
 WORKDIR /usr/share/elasticsearch
@@ -46,4 +48,4 @@ WORKDIR /usr/share/elasticsearch
 EXPOSE 9200 9300
 
 # start cmd
-CMD ["./bin/elasticsearch"]
+CMD ["/usr/share/elasticsearch/start_and_users.sh"]
