@@ -39,3 +39,9 @@ openssl req -newkey rsa:4096 -nodes \
 # CSR signed by CA
 openssl x509 -req -in certs/logstash/logstash.csr -CA certs/ca/ca.crt -CAkey certs/ca/ca.key \
   -CAcreateserial -out certs/logstash/logstash.crt -days 365 -sha256
+
+
+
+cp certs/elasticsearch/elasticsearch.key certs/
+cp certs/elasticsearch/elasticsearch.crt certs/
+cp certs/ca/ca.crt certs/
