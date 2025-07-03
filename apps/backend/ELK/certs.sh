@@ -61,10 +61,6 @@ generate_openssl_config "logstash" "logstash" "localhost" "127.0.0.1"
 openssl req -newkey rsa:4096 -nodes -keyout certs/logstash/logstash.key -out certs/logstash/logstash.csr -config logstash.cnf
 openssl x509 -req -in certs/logstash/logstash.csr -CA certs/ca/ca.crt -CAkey certs/ca/ca.key -CAcreateserial -out certs/logstash/logstash.crt -days 365 -sha256 -extfile logstash.cnf -extensions v3_req
 
-# --- Copy certs to top-level certs folder ---
-cp certs/elasticsearch/elasticsearch.key certs/
-cp certs/elasticsearch/elasticsearch.crt certs/
-cp certs/ca/ca.crt certs/
 
-chmod 644 certs/*.crt certs/*.key
-chown 1000:0 certs/*.crt certs/*.key
+chmod 644 certs/elasticsearch/*.crt certs/elasticsearch/*.key
+chown 1000:0 certs/elasticsearch/*.crt certs/elasticsearch/*.key
