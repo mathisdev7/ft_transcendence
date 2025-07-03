@@ -4,10 +4,14 @@
 ./bin/elasticsearch &
 
 # wait ES to be UP
-until curl -k -u elastic:$ELASTIC_PASSWORD https://localhost:9200; do
-  echo "Le mot de passe est : $ELASTIC_PASSWORD"
-  echo "Waiting for Elasticsearch to start..."
-  sleep 5
+while true; do
+  if curl -k -u elastic:"$ELASTIC_PASSWORD" https://localhost:9200 >/dev/null 2>&1; then
+    echo "Connexion réussie avec le mot de passe : $ELASTIC_PASSWORD"
+    break
+  else
+    echo "Échec de la connexion, mot de passe ou Elasticsearch non disponible. Waiting..."
+    sleep 5
+  fi
 done
 
 # echo $ELASTIC_PASSWORD
