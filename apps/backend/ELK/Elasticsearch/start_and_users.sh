@@ -5,6 +5,7 @@
 
 # wait ES to be UP
 until curl -k -u elastic:$ELASTIC_PASSWORD https://localhost:9200; do
+  echo "Le mot de passe est : $ELASTIC_PASSWORD"
   echo "Waiting for Elasticsearch to start..."
   sleep 5
 done
