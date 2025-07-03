@@ -48,6 +48,8 @@ subjectAltName = @alt_names
 generate_openssl_config "elasticsearch" "elasticsearch" "localhost" "127.0.0.1" "172.18.0.2"
 openssl req -newkey rsa:4096 -nodes -keyout certs/elasticsearch/elasticsearch.key -out certs/elasticsearch/elasticsearch.csr -config elasticsearch.cnf
 openssl x509 -req -in certs/elasticsearch/elasticsearch.csr -CA certs/ca/ca.crt -CAkey certs/ca/ca.key -CAcreateserial -out certs/elasticsearch/elasticsearch.crt -days 365 -sha256 -extfile elasticsearch.cnf -extensions v3_req
+# --concatene car pb
+cat certs/elasticsearch/elasticsearch.crt certs/ca/ca.crt > certs/elasticsearch/elasticsearch-chain.crt
 
 # --- Generate config and certs for Kibana ---
 generate_openssl_config "kibana" "kibana" "localhost" "127.0.0.1"
