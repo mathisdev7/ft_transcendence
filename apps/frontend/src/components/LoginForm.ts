@@ -1,123 +1,234 @@
-import type { LoginData } from "../api/auth";
-import { authAPI } from "../api/auth";
+import { authAPI, type LoginData } from "../api/auth";
+import { BaseComponent } from "./BaseComponent";
+import { Toast } from "./Toast";
 
-export class LoginForm {
-  private form: HTMLFormElement;
-  private emailInput: HTMLInputElement;
-  private passwordInput: HTMLInputElement;
-  private submitButton: HTMLButtonElement;
+export class LoginForm extends BaseComponent {
+  private emailInput!: HTMLInputElement;
+  private passwordInput!: HTMLInputElement;
+  private submitButton!: HTMLButtonElement;
+  private isLoading = false;
 
-  constructor(container: HTMLElement) {
-    this.form = this.createForm();
-    this.emailInput = this.form.querySelector("#email") as HTMLInputElement;
-    this.passwordInput = this.form.querySelector(
-      "#password"
-    ) as HTMLInputElement;
-    this.submitButton = this.form.querySelector("#submit") as HTMLButtonElement;
+  public onLoginSuccess?: (response: any) => void;
 
-    this.setupEventListeners();
-    container.appendChild(this.form);
+  constructor() {
+    super("div", "w-full max-w-md mx-auto");
   }
 
-  private createForm(): HTMLFormElement {
-    const formHTML = `
-      <div class="min-h-screen flex items-center justify-center bg-gray-50">
-        <div class="max-w-md w-full space-y-8">
+  protected init(): void {
+    this.renderForm();
+    this.setupEventListeners();
+  }
+
+  private renderForm(): void {
+    this.element.innerHTML = `
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-8 shadow-lg">
+        <h2 class="text-2xl font-bold text-white mb-6 text-center">Sign In</h2>
+
+        <form class="space-y-6">
           <div>
-            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              sign in
-            </h2>
+            <label for="login-email" class="block text-sm font-medium text-gray-300 mb-2">
+              Email Address
+            </label>
+            <input
+              type="email"
+              id="login-email"
+              name="email"
+              required
+              class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
+              placeholder="Enter your email"
+            />
           </div>
-          <form class="mt-8 space-y-6" id="loginForm">
-            <div class="rounded-md shadow-sm -space-y-px">
-              <div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                  placeholder="email address"
-                />
-              </div>
-              <div>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                  placeholder="password"
-                />
-              </div>
-            </div>
 
-            <div>
-              <button
-                id="submit"
-                type="submit"
-                class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-              >
-                sign in
-              </button>
-            </div>
+          <div>
+            <label for="login-password" class="block text-sm font-medium text-gray-300 mb-2">
+              Password
+            </label>
+            <input
+              type="password"
+              id="login-password"
+              name="password"
+              required
+              class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
+              placeholder="Enter your password"
+            />
+          </div>
 
-            <div class="text-center">
-              <a href="#" id="switchToRegister" class="text-indigo-600 hover:text-indigo-500">
-                don't have an account? sign up
-              </a>
-            </div>
-          </form>
+          <div class="flex items-center justify-between">
+            <a href="#forgot-password" class="text-sm text-gray-400 hover:text-white transition-colors">
+              Forgot your password?
+            </a>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full bg-white text-black py-2 px-4 rounded-md font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          >
+            <span class="button-text">Sign In</span>
+            <div class="spinner hidden ml-2"></div>
+          </button>
+        </form>
+
+        <div class="mt-6 text-center">
+          <span class="text-gray-400">Don't have an account? </span>
+          <a href="#register" class="text-white hover:text-gray-300 font-medium transition-colors">
+            Sign up
+          </a>
         </div>
       </div>
     `;
 
-    const div = document.createElement("div");
-    div.innerHTML = formHTML;
-    return div.querySelector("form") as HTMLFormElement;
+    setTimeout(() => {
+      this.emailInput = this.element.querySelector(
+        "#login-email"
+      ) as HTMLInputElement;
+      this.passwordInput = this.element.querySelector(
+        "#login-password"
+      ) as HTMLInputElement;
+      this.submitButton = this.element.querySelector(
+        'button[type="submit"]'
+      ) as HTMLButtonElement;
+
+      console.log("LoginForm elements:", {
+        emailInput: this.emailInput,
+        passwordInput: this.passwordInput,
+        submitButton: this.submitButton,
+      });
+    }, 0);
   }
 
   private setupEventListeners(): void {
-    this.form.addEventListener("submit", this.handleSubmit.bind(this));
+    setTimeout(() => {
+      const form = this.element.querySelector("form") as HTMLFormElement;
+      if (form) {
+        form.addEventListener("submit", (e) => {
+          console.log("Form submit event triggered");
+          this.handleSubmit(e);
+        });
+        console.log("Form event listener added");
+      } else {
+        console.error("Form not found in LoginForm");
+      }
 
-    const switchLink = this.form.querySelector(
-      "#switchToRegister"
-    ) as HTMLAnchorElement;
-    switchLink.addEventListener("click", (e) => {
-      e.preventDefault();
-      this.onSwitchToRegister?.();
-    });
+      const forgotPasswordLink = this.element.querySelector(
+        'a[href="#forgot-password"]'
+      ) as HTMLAnchorElement;
+      if (forgotPasswordLink) {
+        forgotPasswordLink.addEventListener("click", (e) => {
+          e.preventDefault();
+          console.log("Forgot password link clicked");
+          window.dispatchEvent(
+            new CustomEvent("navigate", {
+              detail: { path: "/forgot-password" },
+            })
+          );
+        });
+      }
+
+      const registerLink = this.element.querySelector(
+        'a[href="#register"]'
+      ) as HTMLAnchorElement;
+      if (registerLink) {
+        registerLink.addEventListener("click", (e) => {
+          e.preventDefault();
+          console.log("Register link clicked");
+          window.dispatchEvent(
+            new CustomEvent("navigate", { detail: { path: "/register" } })
+          );
+        });
+      }
+    }, 0);
   }
 
   private async handleSubmit(e: Event): Promise<void> {
     e.preventDefault();
+    console.log("handleSubmit called");
+
+    if (this.isLoading) {
+      console.log("Already loading, returning");
+      return;
+    }
+
+    if (!this.emailInput || !this.passwordInput) {
+      console.error("Form inputs not found");
+      Toast.error("Form not ready, please try again");
+      return;
+    }
 
     const formData: LoginData = {
-      email: this.emailInput.value,
+      email: this.emailInput.value.trim(),
       password: this.passwordInput.value,
     };
+
+    console.log("Form data:", {
+      email: formData.email,
+      hasPassword: !!formData.password,
+    });
+
+    if (!formData.email || !formData.password) {
+      Toast.error("Please fill in all fields");
+      return;
+    }
 
     this.setLoading(true);
 
     try {
+      console.log("Attempting login...");
       const response = await authAPI.login(formData);
+      console.log("Login successful:", response);
 
-      localStorage.setItem("accessToken", response.accessToken);
-      localStorage.setItem("user", JSON.stringify(response.user));
+      authAPI.setAuth(response.accessToken, response.user);
 
-      this.onLoginSuccess?.(response);
+      try {
+        const userResponse = await authAPI.getMe();
+        authAPI.setAuth(response.accessToken, userResponse.user);
+      } catch (error) {
+        console.error("Failed to refresh user data after login:", error);
+      }
+
+      Toast.success("Login successful!");
+
+      if (this.onLoginSuccess) {
+        this.onLoginSuccess(response);
+      }
+
+      window.dispatchEvent(
+        new CustomEvent("navigate", { detail: { path: "/dashboard" } })
+      );
     } catch (error) {
       console.error("Login failed:", error);
+      Toast.error(error instanceof Error ? error.message : "Login failed");
     } finally {
       this.setLoading(false);
     }
   }
 
   private setLoading(loading: boolean): void {
-    this.submitButton.disabled = loading;
-    this.submitButton.textContent = loading ? "signing in..." : "sign in";
+    this.isLoading = loading;
+
+    if (!this.submitButton) {
+      console.error("Submit button not found");
+      return;
+    }
+
+    const buttonText = this.submitButton.querySelector(
+      ".button-text"
+    ) as HTMLElement;
+    const spinner = this.submitButton.querySelector(".spinner") as HTMLElement;
+
+    if (loading) {
+      if (buttonText) buttonText.classList.add("hidden");
+      if (spinner) spinner.classList.remove("hidden");
+      this.submitButton.disabled = true;
+    } else {
+      if (buttonText) buttonText.classList.remove("hidden");
+      if (spinner) spinner.classList.add("hidden");
+      this.submitButton.disabled = false;
+    }
   }
 
-  public onLoginSuccess?: (response: any) => void;
-  public onSwitchToRegister?: () => void;
+  public reset(): void {
+    if (this.emailInput) this.emailInput.value = "";
+    if (this.passwordInput) this.passwordInput.value = "";
+    this.setLoading(false);
+  }
 }

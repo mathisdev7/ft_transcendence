@@ -1,6 +1,8 @@
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { createUser } from "../../database/lib/createUser.ts";
+import { sendVerificationEmail } from "../../database/lib/emailService.ts";
+import { createToken } from "../../database/lib/tokenService.ts";
 
 const registerBodySchema = z.object({
   email: z.string().email("invalid email format"),
@@ -73,7 +75,23 @@ export async function registerRoute(fastify: FastifyInstance) {
 
         const { email, password } = validation.data;
         const userId = await createUser(email, password);
-        reply.send({ message: "user registered successfully", userId });
+
+        try {
+          const tokenData = await createToken(
+            userId as number,
+            "email_verification",
+            24
+          );
+          await sendVerificationEmail(email, tokenData.token);
+        } catch (emailError) {
+          console.error("Failed to send verification email:", emailError);
+        }
+
+        reply.send({
+          message:
+            "user registered successfully. please check your email to verify your account.",
+          userId: userId.toString(),
+        });
       } catch (error: any) {
         reply.status(400).send({ error: error.message });
       }

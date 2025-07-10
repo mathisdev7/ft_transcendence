@@ -1,20 +1,20 @@
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { sendPasswordResetEmail } from "../../database/lib/emailService.ts";
+import { sendVerificationEmail } from "../../database/lib/emailService.ts";
 import { createToken } from "../../database/lib/tokenService.ts";
 import { getUserByEmail } from "../../database/lib/userService.ts";
 
-const forgotPasswordBodySchema = z.object({
+const resendVerificationBodySchema = z.object({
   email: z.string().email("invalid email format"),
 });
 
-export async function forgotPasswordRoute(fastify: FastifyInstance) {
+export async function resendVerificationRoute(fastify: FastifyInstance) {
   fastify.post(
-    "/auth/forgot-password",
+    "/auth/resend-verification",
     {
       schema: {
         tags: ["Authentication"],
-        summary: "Request password reset",
+        summary: "Resend email verification",
         body: {
           type: "object",
           required: ["email"],
@@ -28,7 +28,7 @@ export async function forgotPasswordRoute(fastify: FastifyInstance) {
         },
         response: {
           200: {
-            description: "Password reset email sent",
+            description: "Verification email sent",
             content: {
               "application/json": {
                 schema: {
@@ -58,7 +58,7 @@ export async function forgotPasswordRoute(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const validation = forgotPasswordBodySchema.safeParse(request.body);
+        const validation = resendVerificationBodySchema.safeParse(request.body);
 
         if (!validation.success) {
           return reply.status(400).send({
@@ -71,16 +71,28 @@ export async function forgotPasswordRoute(fastify: FastifyInstance) {
         try {
           const user = await getUserByEmail(email);
 
-          const tokenData = await createToken(user.id, "password_reset", 1);
+          if (user.is_verified) {
+            return reply.send({
+              message: "email is already verified. you can sign in now.",
+            });
+          }
 
-          await sendPasswordResetEmail(email, tokenData.token);
+          const tokenData = await createToken(
+            user.id,
+            "email_verification",
+            24
+          );
+
+          await sendVerificationEmail(email, tokenData.token);
 
           reply.send({
-            message: "if email exists, password reset instructions have been sent"
+            message:
+              "verification email sent successfully. please check your inbox.",
           });
         } catch (error) {
           reply.send({
-            message: "if email exists, password reset instructions have been sent"
+            message:
+              "if email exists and is not verified, verification email has been sent",
           });
         }
       } catch (error: any) {

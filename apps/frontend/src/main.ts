@@ -1,6 +1,5 @@
 import { App } from "./app";
 import "./style.css";
 
-document.addEventListener("DOMContentLoaded", () => {
-  new App();
-});
+const app = new App();
+app.start().catch(console.error);

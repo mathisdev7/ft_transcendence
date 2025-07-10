@@ -1,164 +1,105 @@
-import { LoginForm } from "./components/LoginForm";
-import { RegisterForm } from "./components/RegisterForm";
+import { createDashboardPage } from "./pages/DashboardPage";
+import { createDocsPage } from "./pages/DocsPage";
+import { createForgotPasswordPage } from "./pages/ForgotPasswordPage";
+import { createLoginPage } from "./pages/LoginPage";
+import { createRegisterPage } from "./pages/RegisterPage";
+import { createResetPasswordPage } from "./pages/ResetPasswordPage";
+import { createVerifyEmailPage } from "./pages/VerifyEmailPage";
+import { Router } from "./router/Router";
 
 export class App {
-  private container: HTMLElement;
-  private currentForm: LoginForm | RegisterForm | null = null;
+  private router: Router;
 
   constructor() {
-    this.container = document.getElementById("app") as HTMLElement;
-    this.init();
+    const appContainer = document.getElementById("app") as HTMLElement;
+    this.router = new Router(appContainer);
+    this.setupRoutes();
   }
 
-  private init(): void {
-    this.checkExistingSession();
+  private setupRoutes(): void {
+    this.router.addRoutes([
+      {
+        path: "/",
+        component: createDashboardPage,
+        requiresAuth: true,
+        title: "Dashboard",
+      },
+      {
+        path: "/docs",
+        component: createDocsPage,
+        requiresAuth: false,
+        title: "Documentation",
+      },
+      {
+        path: "/login",
+        component: createLoginPage,
+        requiresAuth: false,
+        title: "Sign In",
+      },
+      {
+        path: "/register",
+        component: createRegisterPage,
+        requiresAuth: false,
+        title: "Create Account",
+      },
+      {
+        path: "/forgot-password",
+        component: createForgotPasswordPage,
+        requiresAuth: false,
+        title: "Reset Password",
+      },
+      {
+        path: "/reset-password",
+        component: createResetPasswordPage,
+        requiresAuth: false,
+        title: "Reset Password",
+      },
+      {
+        path: "/verify-email",
+        component: createVerifyEmailPage,
+        requiresAuth: false,
+        title: "Verify Email",
+      },
+      {
+        path: "/dashboard",
+        component: createDashboardPage,
+        requiresAuth: true,
+        title: "Dashboard",
+      },
+      {
+        path: "/404",
+        component: this.create404Page,
+        requiresAuth: false,
+        title: "Page Not Found",
+      },
+    ]);
   }
 
-  private checkExistingSession(): void {
-    const accessToken = localStorage.getItem("accessToken");
-    const userStr = localStorage.getItem("user");
-
-    if (accessToken && userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        this.showDashboard(user);
-      } catch (error) {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("user");
-        this.showLoginForm();
-      }
-    } else {
-      this.showLoginForm();
-    }
-  }
-
-  private clearContainer(): void {
-    this.currentForm && (this.container.innerHTML = "");
-    this.currentForm = null;
-  }
-
-  private showLoginForm(): void {
-    this.clearContainer();
-
-    const loginForm = new LoginForm(this.container);
-
-    loginForm.onLoginSuccess = (response) => {
-      console.log("user logged in:", response.user);
-      this.showDashboard(response.user);
-    };
-
-    loginForm.onSwitchToRegister = () => {
-      this.showRegisterForm();
-    };
-
-    this.currentForm = loginForm;
-  }
-
-  private showRegisterForm(): void {
-    this.clearContainer();
-
-    const registerForm = new RegisterForm(this.container);
-
-    registerForm.onRegisterSuccess = (response) => {
-      console.log("user registered:", response);
-      this.showSuccessMessage();
-    };
-
-    registerForm.onSwitchToLogin = () => {
-      this.showLoginForm();
-    };
-
-    this.currentForm = registerForm;
-  }
-
-  private showSuccessMessage(): void {
-    this.clearContainer();
-
-    const successHTML = `
-      <div class="min-h-screen flex items-center justify-center bg-gray-50">
-        <div class="max-w-md w-full text-center space-y-8">
-          <div class="bg-green-50 border border-green-200 rounded-md p-4">
-            <div class="flex">
-              <div class="ml-3">
-                <h3 class="text-lg font-medium text-green-800">
-                  registration successful!
-                </h3>
-                <div class="mt-2 text-sm text-green-700">
-                  <p>your account has been created successfully.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <button
-            id="backToLogin"
-            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            sign in
-          </button>
-        </div>
+  private async create404Page(): Promise<HTMLElement> {
+    const container = document.createElement("div");
+    container.className =
+      "min-h-screen flex items-center justify-center bg-black";
+    container.innerHTML = `
+      <div class="text-center">
+        <h1 class="text-6xl font-bold text-white mb-4">404</h1>
+        <p class="text-xl text-gray-400 mb-8">Page not found</p>
+        <button id="go-home" class="bg-white text-black px-6 py-3 rounded-md font-medium hover:bg-gray-200 transition-colors">
+          Go Home
+        </button>
       </div>
     `;
 
-    this.container.innerHTML = successHTML;
-
-    const backButton = document.getElementById(
-      "backToLogin"
-    ) as HTMLButtonElement;
-    backButton.addEventListener("click", () => {
-      this.showLoginForm();
+    const goHomeBtn = container.querySelector("#go-home") as HTMLButtonElement;
+    goHomeBtn.addEventListener("click", () => {
+      window.dispatchEvent(
+        new CustomEvent("navigate", { detail: { path: "/" } })
+      );
     });
+
+    return container;
   }
 
-  private showDashboard(user: any): void {
-    this.clearContainer();
-
-    const dashboardHTML = `
-      <div class="min-h-screen bg-gray-50">
-        <nav class="bg-white shadow">
-          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-              <div class="flex items-center">
-                <h1 class="text-xl font-semibold text-gray-900">
-                  transcendence
-                </h1>
-              </div>
-              <div class="flex items-center space-x-4">
-                <span class="text-gray-700">hello, ${user.display_name}</span>
-                <button
-                  id="logout"
-                  class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  logout
-                </button>
-              </div>
-            </div>
-          </div>
-        </nav>
-
-        <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          <div class="px-4 py-6 sm:px-0">
-            <div class="border-4 border-dashed border-gray-200 rounded-lg h-96 flex items-center justify-center">
-              <div class="text-center">
-                <h2 class="text-2xl font-bold text-gray-900 mb-4">
-                  welcome to transcendence!
-                </h2>
-                <p class="text-gray-600">
-                  your dashboard will be available soon.
-                </p>
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-    `;
-
-    this.container.innerHTML = dashboardHTML;
-
-    const logoutButton = document.getElementById("logout") as HTMLButtonElement;
-    logoutButton.addEventListener("click", () => {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("user");
-      this.showLoginForm();
-    });
+  public async start(): Promise<void> {
+    await this.router.start();
   }
 }

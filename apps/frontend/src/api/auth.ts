@@ -1,6 +1,5 @@
-import Swal from "sweetalert2";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 export interface RegisterData {
   email: string;
@@ -19,6 +18,9 @@ export interface User {
   display_name: string;
   avatar_url: string;
   is_verified: boolean;
+  created_at: string;
+  updated_at: string;
+  last_login: string;
 }
 
 export interface AuthResponse {
@@ -29,11 +31,47 @@ export interface AuthResponse {
 
 export interface RegisterResponse {
   message: string;
-  userId: number;
+  userId: string;
+}
+
+export interface RefreshResponse {
+  message: string;
+  accessToken: string;
+  user: User;
+}
+
+export interface MessageResponse {
+  message: string;
+}
+
+export interface UserResponse {
+  user: User;
 }
 
 export interface ApiError {
   error: string;
+}
+
+export interface ChangePasswordData {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface ResetPasswordData {
+  token: string;
+  newPassword: string;
+}
+
+export interface ForgotPasswordData {
+  email: string;
+}
+
+export interface VerifyEmailData {
+  token: string;
+}
+
+export interface ResendVerificationData {
+  email: string;
 }
 
 class AuthAPI {
@@ -66,85 +104,116 @@ class AuthAPI {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("user");
 
-        await Swal.fire({
-          icon: "warning",
-          title: "Session expired",
-          text: "Please sign in again",
-          confirmButtonText: "OK",
-        });
-
-        window.location.reload();
+        window.dispatchEvent(new CustomEvent("auth:logout"));
       }
-      throw new Error((data as ApiError).error || "an error occurred");
+      throw new Error((data as ApiError).error || "An error occurred");
     }
 
     return data;
   }
 
   async register(userData: RegisterData): Promise<RegisterResponse> {
-    try {
-      return await this.request<RegisterResponse>("/auth/register", {
-        method: "POST",
-        body: JSON.stringify(userData),
-      });
-    } catch (error) {
-      await Swal.fire({
-        icon: "error",
-        title: "Registration failed",
-        text: error instanceof Error ? error.message : "an error occurred",
-        confirmButtonText: "OK",
-      });
-      throw error;
-    }
+    return await this.request<RegisterResponse>("/auth/register", {
+      method: "POST",
+      body: JSON.stringify(userData),
+    });
   }
 
   async login(userData: LoginData): Promise<AuthResponse> {
+    return await this.request<AuthResponse>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async logout(): Promise<MessageResponse> {
     try {
-      return await this.request<AuthResponse>("/auth/login", {
+      const response = await this.request<MessageResponse>("/auth/logout", {
         method: "POST",
-        body: JSON.stringify(userData),
       });
+
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("user");
+
+      window.dispatchEvent(new CustomEvent("auth:logout"));
+
+      return response;
     } catch (error) {
-      await Swal.fire({
-        icon: "error",
-        title: "Login failed",
-        text: error instanceof Error ? error.message : "an error occurred",
-        confirmButtonText: "OK",
-      });
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("user");
+      window.dispatchEvent(new CustomEvent("auth:logout"));
       throw error;
     }
   }
 
-  async logout(): Promise<void> {
-    try {
-      await this.request<void>("/auth/logout", {
-        method: "POST",
-      });
-
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("user");
-
-      await Swal.fire({
-        icon: "success",
-        title: "Logged out",
-        text: "You have been successfully logged out",
-        timer: 1500,
-        showConfirmButton: false,
-      });
-    } catch (error) {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("user");
-    }
+  async refresh(): Promise<RefreshResponse> {
+    return await this.request<RefreshResponse>("/auth/refresh", {
+      method: "POST",
+    });
   }
 
-  async getMe(): Promise<User> {
-    return this.request<User>("/auth/me");
+  async getMe(): Promise<UserResponse> {
+    return await this.request<UserResponse>("/auth/me");
+  }
+
+  async verifyEmail(data: VerifyEmailData): Promise<MessageResponse> {
+    return await this.request<MessageResponse>("/auth/verify-email", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async resendVerification(
+    data: ResendVerificationData
+  ): Promise<MessageResponse> {
+    return await this.request<MessageResponse>("/auth/resend-verification", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async forgotPassword(data: ForgotPasswordData): Promise<MessageResponse> {
+    return await this.request<MessageResponse>("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async resetPassword(data: ResetPasswordData): Promise<MessageResponse> {
+    return await this.request<MessageResponse>("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async changePassword(data: ChangePasswordData): Promise<MessageResponse> {
+    return await this.request<MessageResponse>("/auth/change-password", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   }
 
   isAuthenticated(): boolean {
     const accessToken = localStorage.getItem("accessToken");
     const user = localStorage.getItem("user");
     return !!(accessToken && user);
+  }
+
+  getCurrentUser(): User | null {
+    const userStr = localStorage.getItem("user");
+    return userStr ? JSON.parse(userStr) : null;
+  }
+
+  setAuth(accessToken: string, user: User): void {
+    localStorage.setItem("accessToken", accessToken);
+    localStorage.setItem("user", JSON.stringify(user));
+    window.dispatchEvent(new CustomEvent("auth:login", { detail: { user } }));
+  }
+
+  clearAuth(): void {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("user");
+    window.dispatchEvent(new CustomEvent("auth:logout"));
   }
 }
 

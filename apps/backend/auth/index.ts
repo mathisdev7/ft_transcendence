@@ -15,7 +15,11 @@ const fastify = Fastify({
 });
 
 fastify.register(import("@fastify/cors"), {
-  origin: ["http://localhost:5173", "https://www.pongenmoinsbien.xyz"],
+  origin: [
+    process.env.NODE_ENV === "development"
+      ? "http://localhost:5173"
+      : "https://www.pongenmoinsbien.xyz",
+  ],
   credentials: true,
 });
 
@@ -28,6 +32,15 @@ if (process.env.NODE_ENV === "development") {
         version: "1.0.0",
       },
       servers: [{ url: "http://localhost:3000" }],
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: "http",
+            scheme: "bearer",
+            bearerFormat: "JWT",
+          },
+        },
+      },
     },
   });
 
