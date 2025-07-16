@@ -56,7 +56,7 @@ services:
     container_name: logstash
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-      - ELASTICSEARCH_USERNAME=logstash_system
+      - ELASTICSEARCH_USERNAME=logstash
       - ELASTICSEARCH_PASSWORD=mdp123
     ports:
       - "5044:5044"
