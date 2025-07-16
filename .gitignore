@@ -1,0 +1,16 @@
+# SSL/TL
+certs/
+*.key
+*.crt
+*.csr
+*.srl
+
+# temporary conf files
+*.cnf
+
+# Elasticsearch data
+data/
+
+# Logs
+logs/
+*.log
