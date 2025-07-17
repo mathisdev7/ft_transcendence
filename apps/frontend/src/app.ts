@@ -2,6 +2,8 @@ import { createDashboardPage } from "./pages/DashboardPage";
 import { createDocsPage } from "./pages/DocsPage";
 import { createForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { createLoginPage } from "./pages/LoginPage";
+import { PlayMenuPage, createPlayMenuPage } from "./pages/PlayMenu";
+import { createOnlineGamePage } from "./pages/PlayOnline";
 import { createRegisterPage } from "./pages/RegisterPage";
 import { createResetPasswordPage } from "./pages/ResetPasswordPage";
 import { createVerifyEmailPage } from "./pages/VerifyEmailPage";
@@ -72,6 +74,18 @@ export class App {
         requiresAuth: false,
         title: "Page Not Found",
       },
+      {
+        path: "/play",
+        component: createPlayMenuPage,
+        requiresAuth: false,
+        title: "Play"
+      },
+      {
+        path: "/play/online",
+        component: createOnlineGamePage,
+        requiresAuth: false,
+        title: "Play Online"
+      }
     ]);
   }
 
