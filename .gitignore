@@ -10,7 +10,33 @@ certs/
 
 # Elasticsearch data
 data/
+es_data/
 
 # Logs
 logs/
 *.log
+
+# Environment variables
+.env
+
+# Docker
+docker-compose.override.yml
+
+# Database
+*.db
+*.sqlite
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Node modules
+node_modules/
+
+# Build output
+dist/
+build/

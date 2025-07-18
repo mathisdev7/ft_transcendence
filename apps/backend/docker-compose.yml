@@ -1,78 +1,79 @@
 services:
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+    env_file: ".env"
+    build:
+      context: ./ELK/Elasticsearch
     container_name: elasticsearch
+    hostname: elasticsearch
     environment:
-      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
-      - ELASTIC_PASSWORD=mdp123
+      - node.name=${NODE_NAME}
+      - cluster.name=${CLUSTER_NAME}
       - discovery.type=single-node
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - xpack.security.enabled=true
       - xpack.security.authc.api_key.enabled=true
-      - xpack.security.http.ssl.enabled=false
-      - xpack.security.transport.ssl.enabled=false
-      - cluster.name=transcendence
-      - node.name=node-1
-      - network.host=0.0.0.0
-      - http.port=9200
+      - ES_JAVA_OPTS=${ES_JAVA_OPTS}
     ports:
       - "9200:9200"
       - "9300:9300"
-    volumes:
-      - es_data:/usr/share/elasticsearch/data
     networks:
       - elk
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
     healthcheck:
-      test: ["CMD-SHELL", "curl -u elastic:mdp123 http://localhost:9200/_cluster/health || exit 1"]
+      test: ["CMD-SHELL", "curl -u elastic:${ELASTIC_PASSWORD} -s -f http://localhost:9200/_cluster/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:8.15.0
+    env_file: ".env"
+    build:
+      context: ./ELK/Kibana
     container_name: kibana
+    hostname: kibana
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-      - ELASTICSEARCH_USERNAME=kibana_system
-      - ELASTICSEARCH_PASSWORD=mdp123
-      - SERVER_HOST=0.0.0.0
-      - KIBANA_SYSTEM_PASSWORD=mdp123
+      - ELASTICSEARCH_USERNAME=${ELASTICSEARCH_USERNAME_KIBANA}
+      - ELASTICSEARCH_PASSWORD=${KIBANA_SYSTEM_PASSWORD}
     ports:
       - "5601:5601"
-    volumes:
-      - ./ELK/Kibana/kibana.yml:/usr/share/kibana/config/kibana.yml
+    networks:
+      - elk
     depends_on:
       elasticsearch:
         condition: service_healthy
-    networks:
-      - elk
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      test: ["CMD-SHELL", "curl -s -f http://localhost:5601/api/status || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
 
   logstash:
-    image: docker.elastic.co/logstash/logstash:8.15.0
+    env_file: ".env"
+    build:
+      context: ./ELK/Logstash
     container_name: logstash
+    hostname: logstash
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-      - ELASTICSEARCH_USERNAME=logstash
-      - ELASTICSEARCH_PASSWORD=mdp123
+      - ELASTICSEARCH_USERNAME=${ELASTICSEARCH_USERNAME_LOGSTASH}
+      - ELASTICSEARCH_PASSWORD=${LOGSTASH_PASSWORD}
     ports:
       - "5044:5044"
       - "9600:9600"
-    volumes:
-      - ./ELK/Logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+    networks:
+      - elk
     depends_on:
       elasticsearch:
         condition: service_healthy
-    networks:
-      - elk
-
-volumes:
-  es_data:
-  certs:
+    volumes:
+      - ./ELK/Logstash/pipeline:/usr/share/logstash/pipeline
 
 networks:
   elk:
     driver: bridge
+
+volumes:
+  elasticsearch_data:
+    driver: local
