@@ -133,6 +133,7 @@ fastify.post('/create-game', async (request, reply) => {
 fastify.get('/games', async (request, reply) => {
   try {
     const games = getAllGames.all()
+    console.log(games);
     
     // Convertir en objet pour maintenir la compatibilité
     const gamesObject: { [key: string]: { pid: number, port: number, full: boolean } } = {}
@@ -158,6 +159,7 @@ fastify.post('/games/join', async (request, reply) => {
   try {
     // Chercher une game disponible
     const availableGame = getAvailableGame.get()
+    console.log("available game elle est la:")
     
     if (availableGame) {
       // Une game est disponible
@@ -170,7 +172,7 @@ fastify.post('/games/join', async (request, reply) => {
         message: 'Joined existing game',
         gameId: game.id,
         port: game.port,
-        full: true,
+        full: 1,
         action: 'joined'
       })
     } else {
@@ -189,7 +191,9 @@ fastify.post('/games/join', async (request, reply) => {
       }
 
       // Insertion en base de données (full = false car on attend un 2ème joueur)
-      insertGame.run(gameId, child.pid, port, 0) // 0 = false
+      const insertQuery = insertGame.run(gameId, child.pid, port, 0) // 0 = false
+      const games = getAllGames.all();
+      console.log(games)
 
       // Gestion de la fermeture du processus enfant
       child.on('exit', (code, signal) => {
@@ -201,7 +205,7 @@ fastify.post('/games/join', async (request, reply) => {
         message: 'Created new game, waiting for opponent',
         gameId,
         port,
-        full: false,
+        full: 0,
         action: 'created'
       })
     }

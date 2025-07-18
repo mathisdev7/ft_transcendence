@@ -11,6 +11,12 @@ export class PlayMenuPage extends BaseComponent {
   }
 
   private renderPage(): void {
+    const fetchData = async () => {
+    const data = await fetch("http://localhost:3000/games");
+    const json = await data.json();
+    console.log(json)
+    }
+    fetchData();
     this.element.innerHTML = `
       <div class="w-full max-w-md text-center">
         <h1 class="text-3xl font-bold mb-8">Transcendence - Menu</h1>
