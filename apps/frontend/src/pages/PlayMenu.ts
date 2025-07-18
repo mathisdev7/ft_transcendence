@@ -41,12 +41,9 @@ export class PlayMenuPage extends BaseComponent {
     if (onlineBtn) {
       onlineBtn.addEventListener("click", async () => {
         try {
-          const data = await createGameServer(); // Appel au backend
-          const port = data.port;
-          const gameId = data.gameId;
-          
+          const joinRequest = fetch('http://localhost:3000/games/join', {method: "POST"});
           window.dispatchEvent(new CustomEvent("navigate", {
-            detail: { path: `/play/online?port=${port}&id=${gameId}` }
+            detail: { path: `/play/online` }
           }));
         } catch (err) {
           console.error("Erreur lors de la création du serveur :", err);
