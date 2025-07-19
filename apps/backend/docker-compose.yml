@@ -61,6 +61,7 @@ services:
       - ELASTICSEARCH_PASSWORD=${LOGSTASH_PASSWORD}
     ports:
       - "5044:5044"
+      - "5000:5000"
       - "9600:9600"
     networks:
       - elk
