@@ -2,7 +2,8 @@ services:
   elasticsearch:
     env_file: ".env"
     build:
-      context: ./ELK/Elasticsearch
+      context: ./ELK
+      dockerfile: Elasticsearch/Dockerfile
     container_name: elasticsearch
     hostname: elasticsearch
     environment:
@@ -12,6 +13,16 @@ services:
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - xpack.security.enabled=true
       - xpack.security.authc.api_key.enabled=true
+      - xpack.security.http.ssl.enabled=true
+      - xpack.security.http.ssl.key=/usr/share/elasticsearch/config/certs/elasticsearch-key.pem
+      - xpack.security.http.ssl.certificate=/usr/share/elasticsearch/config/certs/elasticsearch-cert.pem
+      - xpack.security.http.ssl.certificate_authorities=/usr/share/elasticsearch/config/certs/ca-cert.pem
+      - xpack.security.http.ssl.verification_mode=certificate
+      - xpack.security.transport.ssl.enabled=true
+      - xpack.security.transport.ssl.key=/usr/share/elasticsearch/config/certs/elasticsearch-key.pem
+      - xpack.security.transport.ssl.certificate=/usr/share/elasticsearch/config/certs/elasticsearch-cert.pem
+      - xpack.security.transport.ssl.certificate_authorities=/usr/share/elasticsearch/config/certs/ca-cert.pem
+      - xpack.security.transport.ssl.verification_mode=certificate
       - ES_JAVA_OPTS=${ES_JAVA_OPTS}
     ports:
       - "9200:9200"
@@ -21,7 +32,7 @@ services:
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     healthcheck:
-      test: ["CMD-SHELL", "curl -u elastic:${ELASTIC_PASSWORD} -s -f http://localhost:9200/_cluster/health || exit 1"]
+      test: ["CMD-SHELL", "curl -k -u elastic:${ELASTIC_PASSWORD} -s -f https://localhost:9200/_cluster/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -29,13 +40,19 @@ services:
   kibana:
     env_file: ".env"
     build:
-      context: ./ELK/Kibana
+      context: ./ELK
+      dockerfile: Kibana/Dockerfile
     container_name: kibana
     hostname: kibana
     environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_HOSTS=https://elasticsearch:9200
       - ELASTICSEARCH_USERNAME=${ELASTICSEARCH_USERNAME_KIBANA}
       - ELASTICSEARCH_PASSWORD=${KIBANA_SYSTEM_PASSWORD}
+      - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=/usr/share/kibana/config/certs/ca-cert.pem
+      - ELASTICSEARCH_SSL_VERIFICATIONMODE=certificate
+      - SERVER_SSL_ENABLED=true
+      - SERVER_SSL_CERTIFICATE=/usr/share/kibana/config/certs/kibana-cert.pem
+      - SERVER_SSL_KEY=/usr/share/kibana/config/certs/kibana-key.pem
     ports:
       - "5601:5601"
     networks:
@@ -44,7 +61,7 @@ services:
       elasticsearch:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -s -f http://localhost:5601/api/status || exit 1"]
+      test: ["CMD-SHELL", "curl -k -s -f https://localhost:5601/api/status || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -52,13 +69,16 @@ services:
   logstash:
     env_file: ".env"
     build:
-      context: ./ELK/Logstash
+      context: ./ELK
+      dockerfile: Logstash/Dockerfile
     container_name: logstash
     hostname: logstash
     environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_HOSTS=https://elasticsearch:9200
       - ELASTICSEARCH_USERNAME=${ELASTICSEARCH_USERNAME_LOGSTASH}
       - ELASTICSEARCH_PASSWORD=${LOGSTASH_PASSWORD}
+      - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=/usr/share/logstash/config/certs/ca-cert.pem
+      - ELASTICSEARCH_SSL_VERIFICATIONMODE=certificate
     ports:
       - "5044:5044"
       - "5001:5000"

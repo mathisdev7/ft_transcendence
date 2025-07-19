@@ -1,9 +1,13 @@
 # SSL/TL
-certs/
 *.key
 *.crt
 *.csr
 *.srl
+*.pem
+
+# Ignore all files in certs/ except generate-certs.sh
+certs/*
+!certs/generate-certs.sh
 
 # temporary conf files
 *.cnf
