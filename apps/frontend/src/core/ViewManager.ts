@@ -8,6 +8,7 @@ export enum ViewType {
   VERIFY_EMAIL = "verify-email",
   DASHBOARD = "dashboard",
   PLAY_MENU = "play-menu",
+  PLAY_LOCAL = "play-local",
   PLAY_ONLINE = "play-online",
   DOCS = "docs",
 }
@@ -19,7 +20,7 @@ export interface View {
   title?: string;
 }
 
-export class Router {
+export class ViewManager {
   private views: Map<ViewType, View> = new Map();
   private currentView: ViewType = ViewType.LOGIN;
   private appContainer: HTMLElement;

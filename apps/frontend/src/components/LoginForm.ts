@@ -1,4 +1,5 @@
 import { authAPI, type LoginData } from "../api/auth";
+import { navigateToView, ViewType } from "../utils/navigation";
 import { BaseComponent } from "./BaseComponent";
 import { Toast } from "./Toast";
 
@@ -69,10 +70,16 @@ export class LoginForm extends BaseComponent {
         </form>
 
         <div class="mt-6 text-center">
-          <span class="text-gray-400">Don't have an account? </span>
-          <a href="#register" class="text-white hover:text-gray-300 font-medium transition-colors">
-            Sign up
-          </a>
+          <p class="text-center text-gray-400">
+            Don't have an account?
+            <button
+              type="button"
+              id="go-to-register"
+              class="text-white hover:underline font-medium ml-1"
+            >
+              Create one
+            </button>
+          </p>
         </div>
       </div>
     `;
@@ -125,15 +132,13 @@ export class LoginForm extends BaseComponent {
       }
 
       const registerLink = this.element.querySelector(
-        'a[href="#register"]'
-      ) as HTMLAnchorElement;
+        'button[id="go-to-register"]'
+      ) as HTMLButtonElement;
       if (registerLink) {
         registerLink.addEventListener("click", (e) => {
           e.preventDefault();
           console.log("Register link clicked");
-          window.dispatchEvent(
-            new CustomEvent("navigate", { detail: { path: "/register" } })
-          );
+          navigateToView(ViewType.REGISTER);
         });
       }
     }, 0);
@@ -191,9 +196,7 @@ export class LoginForm extends BaseComponent {
         this.onLoginSuccess(response);
       }
 
-      window.dispatchEvent(
-        new CustomEvent("navigate", { detail: { path: "/dashboard" } })
-      );
+      navigateToView(ViewType.DASHBOARD);
     } catch (error) {
       console.error("Login failed:", error);
       Toast.error(error instanceof Error ? error.message : "Login failed");

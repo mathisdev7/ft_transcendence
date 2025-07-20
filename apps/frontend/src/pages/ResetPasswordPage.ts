@@ -1,4 +1,5 @@
 import { ResetPasswordForm } from "../components/ResetPasswordForm";
+import { navigateToView, ViewType } from "../utils/navigation";
 
 export async function createResetPasswordPage(): Promise<HTMLElement> {
   const container = document.createElement("div");
@@ -25,9 +26,7 @@ export async function createResetPasswordPage(): Promise<HTMLElement> {
       "#go-to-forgot"
     ) as HTMLButtonElement;
     forgotBtn.addEventListener("click", () => {
-      window.dispatchEvent(
-        new CustomEvent("navigate", { detail: { path: "/forgot-password" } })
-      );
+      navigateToView(ViewType.FORGOT_PASSWORD);
     });
 
     return container;

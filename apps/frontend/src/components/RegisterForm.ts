@@ -1,4 +1,5 @@
 import { authAPI, type RegisterData } from "../api/auth";
+import { navigateToView, ViewType } from "../utils/navigation";
 import { BaseComponent } from "./BaseComponent";
 import { Toast } from "./Toast";
 
@@ -133,9 +134,7 @@ export class RegisterForm extends BaseComponent {
         loginLink.addEventListener("click", (e) => {
           e.preventDefault();
           console.log("Login link clicked");
-          window.dispatchEvent(
-            new CustomEvent("navigate", { detail: { path: "/login" } })
-          );
+          navigateToView(ViewType.LOGIN);
         });
       }
 
@@ -231,9 +230,7 @@ export class RegisterForm extends BaseComponent {
         this.onRegisterSuccess(response);
       }
 
-      window.dispatchEvent(
-        new CustomEvent("navigate", { detail: { path: "/login" } })
-      );
+      navigateToView(ViewType.LOGIN);
     } catch (error) {
       console.error("Registration failed:", error);
       Toast.error(

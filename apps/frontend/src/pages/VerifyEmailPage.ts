@@ -1,4 +1,5 @@
 import { VerifyEmailForm } from "../components/VerifyEmailForm";
+import { navigateToView, ViewType } from "../utils/navigation";
 
 export async function createVerifyEmailPage(): Promise<HTMLElement> {
   const container = document.createElement("div");
@@ -25,9 +26,7 @@ export async function createVerifyEmailPage(): Promise<HTMLElement> {
       "#go-to-register"
     ) as HTMLButtonElement;
     registerBtn.addEventListener("click", () => {
-      window.dispatchEvent(
-        new CustomEvent("navigate", { detail: { path: "/register" } })
-      );
+      navigateToView(ViewType.REGISTER);
     });
 
     return container;

@@ -1,97 +1,65 @@
-import Database from 'better-sqlite3';
-import { fork } from 'child_process';
-import { randomUUID } from 'crypto';
-import dotenv from 'dotenv';
-import Fastify from 'fastify';
-import path from 'path';
+import swagger from "@fastify/swagger";
+import swaggerUI from "@fastify/swagger-ui";
+import dotenv from "dotenv";
+import Fastify from "fastify";
+import { closeDatabase, initDatabase } from "./database/init.js";
+import { gameRoutes } from "./routes/gameRoutes.js";
+import { websocketRoutes } from "./routes/websocketRoutes.js";
 
 dotenv.config();
 
+if (!process.env.JWT_SECRET || !process.env.COOKIE_SECRET) {
+  throw new Error("JWT_SECRET or COOKIE_SECRET is not set");
+}
+
 const fastify = Fastify({
-  logger: true
-})
-
-// Initialisation de la base de données
-const db = new Database('lobby.db')
-
-// Création de la table des jeux actifs
-db.exec(`
-  CREATE TABLE IF NOT EXISTS active_games (
-    id TEXT PRIMARY KEY,
-    pid INTEGER NOT NULL,
-    port INTEGER NOT NULL UNIQUE,
-    full INTEGER DEFAULT 0,
-    player_1_id TEXT NOT NULL,
-    player_2_id TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`)
-
-// Préparation des requêtes pour optimiser les performances
-const insertGame = db.prepare(`
-  INSERT INTO active_games (id, pid, port, full, player_1_id, player_2_id)
-  VALUES (?, ?, ?, ?, ?, ?)
-`)
-
-const updateGameStatus = db.prepare(`
-  UPDATE active_games 
-  SET full = ?, player_2_id = ?, updated_at = CURRENT_TIMESTAMP
-  WHERE id = ?
-`)
-
-const getGame = db.prepare(`
-  SELECT * FROM active_games WHERE id = ?
-`)
-
-const getAllGames = db.prepare(`
-  SELECT * FROM active_games
-`)
-
-const deleteGame = db.prepare(`
-  DELETE FROM active_games WHERE id = ?
-`)
-
-const getMaxPort = db.prepare(`
-  SELECT MAX(port) as max_port FROM active_games
-`)
-
-const getAvailableGame = db.prepare(`
-  SELECT * FROM active_games WHERE full = 0 ORDER BY created_at ASC LIMIT 1
-`)
-
-// Fonction pour obtenir le prochain port disponible
-function getNextAvailablePort(): number {
-  const result = getMaxPort.get() as { max_port: number | null }
-  return result.max_port ? result.max_port + 1 : 4000
-}
-
-// Fonction pour nettoyer les processus morts
-function cleanupDeadProcesses() {
-  const games = getAllGames.all()
-  games.forEach((game: any) => {
-    try {
-      process.kill(game.pid, 0) // Test si le processus existe
-    } catch (error) {
-      // Le processus n'existe plus, on le supprime de la DB
-      deleteGame.run(game.id)
-      fastify.log.info(`Cleaned up dead process for game ${game.id}`)
-    }
-  })
-}
-
-// Nettoyage initial au démarrage
-cleanupDeadProcesses()
-
-// Nettoyage périodique toutes les minutes
-setInterval(cleanupDeadProcesses, 60000)
+  logger: {
+    level: process.env.NODE_ENV === "development" ? "info" : "warn",
+  },
+});
 
 fastify.register(import("@fastify/cors"), {
-  origin: [
-    "http://localhost:5173"
-  ],
+  origin: ["http://localhost:5173", "https://www.pongenmoinsbien.xyz"],
   credentials: true,
-})
+});
+
+if (process.env.NODE_ENV === "development") {
+  fastify.register(swagger, {
+    openapi: {
+      info: {
+        title: "Pong Game API",
+        description: "Real-time Pong game microservice API documentation",
+        version: "1.0.0",
+      },
+      servers: [{ url: "http://localhost:3001" }],
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: "http",
+            scheme: "bearer",
+            bearerFormat: "JWT",
+          },
+        },
+        schemas: {
+          Error: {
+            type: "object",
+            properties: {
+              error: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  fastify.register(swaggerUI, {
+    routePrefix: "/docs",
+    uiConfig: {
+      docExpansion: "full",
+      deepLinking: false,
+    },
+  });
+}
 
 fastify.register(import("@fastify/jwt"), {
   secret: process.env.JWT_SECRET,
@@ -101,81 +69,88 @@ fastify.register(import("@fastify/cookie"), {
   secret: process.env.COOKIE_SECRET,
 });
 
-fastify.get('/', async (request, reply) => {
-  return { message: 'Lobby is running' }
-})
+fastify.register(import("@fastify/websocket"));
 
-fastify.post(
-  '/games/join',
-  {
-    preHandler: async (request, reply) => {
-      try {
-        await request.jwtVerify();
-      } catch (err) {
-        reply.status(401).send({ error: "unauthorized" });
-      }
+fastify.get("/", async (request, reply) => {
+  return {
+    message: "Pong Game Microservice is running",
+    version: "1.0.0",
+    endpoints: {
+      docs: "/docs",
+      health: "/health",
+      games: "/game",
+      websocket: "/ws/game/:gameId",
     },
-  },
-  async (request, reply) => {
-    try {
-      const {userId} = request.body;
-      const availableGame = getAvailableGame.get()
-      if (availableGame) {
-        const game = availableGame as any
-        
-        updateGameStatus.run(1, null, game.id)
-        reply.send({
-          message: 'Joined existing game',
-          gameId: game.id,
-          port: game.port,
-          full: 1,
-          player_1_id: game.player_1_id,
-          player_2_id: userId,
-          action: 'joined'
-        })
-      } else {
-        const gameId = randomUUID();
-        const port = getNextAvailablePort();
+  };
+});
 
-        const child = fork(path.join(__dirname, 'game-server.js'), [], {
-          env: { PORT: port.toString() }
-        })
+fastify.get("/health", async (request, reply) => {
+  return {
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    service: "pong-game",
+  };
+});
 
-        if (!child.pid) {
-          return reply.code(500).send({
-            error: 'Failed to start game server'
-          })
-        }
-        insertGame.run(gameId, child.pid, port, 0, null, null)
-        const games = getAllGames.all();
-        child.on('exit', (code, signal) => {
-          fastify.log.info(`Game ${gameId} exited with code ${code}, signal ${signal}`)
-          deleteGame.run(gameId)
-        })
+async function start() {
+  try {
+    console.log("🎮 Initializing Pong Game Microservice...");
 
-        reply.send({
-          message: 'Created new game, waiting for opponent',
-          gameId,
-          port,
-          full: 0,
-          player_1_id: userId,
-          player_2_id: null,
-          action: 'created'
-        })
-      }
-    } catch (error) {
-      fastify.log.error(error)
-      reply.code(500).send({
-        error: 'Failed to join or create game'
-      });
+    initDatabase();
+    console.log("✅ Database initialized successfully");
+
+    await fastify.register(gameRoutes);
+    console.log("✅ Game routes registered");
+
+    await fastify.register(websocketRoutes);
+    console.log("✅ WebSocket routes registered");
+
+    const port = Number(process.env.PORT) || 3001;
+    const host = process.env.HOST || "0.0.0.0";
+
+    console.log(`🚀 Starting server on ${host}:${port}...`);
+
+    await fastify.listen({ port, host });
+
+    console.log(`✅ Pong Game Microservice started successfully!`);
+    console.log(`🌐 Server: http://${host}:${port}`);
+
+    if (process.env.NODE_ENV === "development") {
+      console.log(`📚 API Documentation: http://${host}:${port}/docs`);
     }
+  } catch (error) {
+    console.error("❌ Failed to start server:");
+    console.error(error);
+    process.exit(1);
   }
-)
+}
 
-fastify.listen({ port: 3000 }, function (err, address) {
-  if (err) {
-    fastify.log.error(err)
-    process.exit(1)
+async function gracefulShutdown() {
+  console.log("🛑 Shutting down gracefully...");
+
+  try {
+    await fastify.close();
+    closeDatabase();
+    console.log("✅ Server closed successfully");
+    process.exit(0);
+  } catch (error) {
+    console.error("❌ Error during shutdown:", error);
+    process.exit(1);
   }
-  fastify.log.info(`Lobby server listening on ${address}`)
-})
+}
+
+process.on("SIGTERM", gracefulShutdown);
+process.on("SIGINT", gracefulShutdown);
+
+process.on("uncaughtException", (error) => {
+  console.error("❌ Uncaught Exception:", error);
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("❌ Unhandled Rejection at:", promise, "reason:", reason);
+  process.exit(1);
+});
+
+start();

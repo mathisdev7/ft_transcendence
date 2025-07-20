@@ -1,4 +1,5 @@
 import { authAPI, type ForgotPasswordData } from "../api/auth";
+import { navigateToView, ViewType } from "../utils/navigation";
 import { BaseComponent } from "./BaseComponent";
 import { Toast } from "./Toast";
 
@@ -74,9 +75,7 @@ export class ForgotPasswordForm extends BaseComponent {
     ) as HTMLAnchorElement;
     loginLink.addEventListener("click", (e) => {
       e.preventDefault();
-      window.dispatchEvent(
-        new CustomEvent("navigate", { detail: { path: "/login" } })
-      );
+      navigateToView(ViewType.LOGIN);
     });
   }
 

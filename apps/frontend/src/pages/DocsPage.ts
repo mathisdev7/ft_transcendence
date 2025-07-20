@@ -1,4 +1,5 @@
 import { BaseComponent } from "../components/BaseComponent";
+import { navigateToView, ViewType } from "../utils/navigation";
 
 export class DocsPage extends BaseComponent {
   constructor() {
@@ -273,9 +274,7 @@ export class DocsPage extends BaseComponent {
     ) as HTMLButtonElement;
     if (backHomeBtn) {
       backHomeBtn.addEventListener("click", () => {
-        window.dispatchEvent(
-          new CustomEvent("navigate", { detail: { path: "/" } })
-        );
+        navigateToView(ViewType.DASHBOARD);
       });
     }
   }
