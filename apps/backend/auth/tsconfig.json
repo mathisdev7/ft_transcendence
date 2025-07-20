@@ -1,9 +1,25 @@
 {
-  "compilerOptions": {
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "target": "ES2022",
-    "allowImportingTsExtensions": true,
-    "noEmit": true
-  }
+	"compilerOptions": {
+		"module": "CommonJS",
+		"moduleResolution": "node",
+		"target": "ES2022",
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
+		"strict": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"declaration": false,
+		"outDir": "./dist",
+		"rootDir": "./",
+		"types": ["node"],
+		"allowImportingTsExtensions": true,
+		"noEmit": true
+	},
+	"ts-node": {
+		"esm": false,
+		"experimentalSpecifierResolution": "node"
+	},
+	"include": ["**/*.ts"],
+	"exclude": ["node_modules", "dist"]
 }

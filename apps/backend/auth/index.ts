@@ -3,8 +3,8 @@ import swaggerUI from "@fastify/swagger-ui";
 import dotenv from "dotenv";
 import Fastify from "fastify";
 import winston from "winston";
-import { initDatabase } from "./database/init.ts";
-import { registerAllRoutes } from "./routes/index.ts";
+import { initDatabase } from "./database/init";
+import { registerAllRoutes } from "./routes/index";
 dotenv.config();
 
 if (!process.env.JWT_SECRET || !process.env.COOKIE_SECRET) {
@@ -30,11 +30,14 @@ const logger = winston.createLogger({
   ),
   transports: [
     new winston.transports.Console(),
-    // TCP transport to Logstash
     new winston.transports.Http({
       host: process.env.LOGSTASH_HOST || "localhost",
-      port: parseInt(process.env.LOGSTASH_PORT || "5000"),
-      path: "/",
+      port: parseInt(process.env.LOGSTASH_PORT || "5001"),
+      path: '/',
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.json()
+      )
     })
   ],
 });
@@ -44,7 +47,19 @@ const fastify = Fastify({
     stream: {
       write: (msg: string) => {
         const logObj = JSON.parse(msg);
-        logger.log(logObj.level, logObj.msg, {
+
+        const levelMap: { [key: number]: string } = {
+          10: 'debug',
+          20: 'debug',
+          30: 'info',
+          40: 'warn',
+          50: 'error',
+          60: 'error'
+        };
+
+        const level = levelMap[logObj.level] || 'info';
+
+        logger.log(level, logObj.msg, {
           reqId: logObj.reqId,
           req: logObj.req,
           res: logObj.res
@@ -100,6 +115,6 @@ fastify.listen(
       process.exit(1);
     }
     logger.info("Microservice Auth started", { address, service: "auth" });
-	console.log("Microservice Auth started", { address, service: "auth" });
+	logger.info("==============================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================");
   }
 );

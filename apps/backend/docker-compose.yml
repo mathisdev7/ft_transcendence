@@ -81,7 +81,8 @@ services:
       - ELASTICSEARCH_SSL_VERIFICATIONMODE=certificate
     ports:
       - "5044:5044"
-      - "5001:5000"
+      - "5002:5000"
+      - "5001:5001"
       - "9600:9600"
     networks:
       - elk
@@ -92,33 +93,31 @@ services:
       - ./ELK/Logstash/pipeline:/usr/share/logstash/pipeline
 
   auth-service:
-    build:
-      context: ./auth
-      dockerfile: Dockerfile
-    container_name: auth-service
-    hostname: auth-service
-    environment:
-      - NODE_ENV=production
-      - JWT_SECRET=${JWT_SECRET}
-      - COOKIE_SECRET=${COOKIE_SECRET}
-      - LOGSTASH_HOST=logstash
-      - LOGSTASH_PORT=5000
-      - LOG_LEVEL=info
-    ports:
-      - "3000:3000"
-    networks:
-      - elk
-    depends_on:
-      logstash:
-        condition: service_started
-    volumes:
-      - ./auth:/app
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-        labels: "service=auth"
+      build:
+        context: ./auth
+        dockerfile: Dockerfile
+      container_name: auth-service
+      hostname: auth-service
+      environment:
+        - NODE_ENV=production
+        - JWT_SECRET=${JWT_SECRET}
+        - COOKIE_SECRET=${COOKIE_SECRET}
+        - LOGSTASH_HOST=logstash
+        - LOGSTASH_PORT=5001
+        - LOG_LEVEL=info
+      ports:
+        - "3000:3000"
+      networks:
+        - elk
+      depends_on:
+        logstash:
+          condition: service_started
+      logging:
+        driver: "json-file"
+        options:
+          max-size: "10m"
+          max-file: "3"
+          labels: "service=auth"
 
 networks:
   elk:
