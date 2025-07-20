@@ -1,5 +1,5 @@
+import type { User } from "../api/auth";
 import { BaseComponent } from "../components/BaseComponent";
-import { createGameServer } from "../api/lobby-api";
 
 export class PlayMenuPage extends BaseComponent {
   constructor() {
@@ -11,12 +11,6 @@ export class PlayMenuPage extends BaseComponent {
   }
 
   private renderPage(): void {
-    const fetchData = async () => {
-    const data = await fetch("http://localhost:3000/games");
-    const json = await data.json();
-    console.log(json)
-    }
-    fetchData();
     this.element.innerHTML = `
       <div class="w-full max-w-md text-center">
         <h1 class="text-3xl font-bold mb-8">Transcendence - Menu</h1>
@@ -30,7 +24,6 @@ export class PlayMenuPage extends BaseComponent {
         </div>
       </div>
     `;
-
     this.setupEventListeners();
   }
 
@@ -47,7 +40,12 @@ export class PlayMenuPage extends BaseComponent {
     if (onlineBtn) {
       onlineBtn.addEventListener("click", async () => {
         try {
-          const joinRequest = fetch('http://localhost:3000/games/join', {method: "POST"});
+          const accessToken = localStorage.getItem("accessToken");
+          const user = localStorage.getItem("user") as unknown as User;
+          if (!user && !user.id) {
+            return;
+          }
+          const joinRequest = fetch('http://localhost:3000/games/join', {method: "POST", headers: {"Authorization": `Bearer ${accessToken}`}, body: JSON.stringify({userId: user.id})});
           window.dispatchEvent(new CustomEvent("navigate", {
             detail: { path: `/play/online` }
           }));

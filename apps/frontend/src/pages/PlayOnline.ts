@@ -16,7 +16,6 @@ export class PlayOnlinePage extends BaseComponent {
     canvas.height = 600;
     canvas.style.backgroundColor = "black";
     canvas.style.border = "2px solid white";
-
     this.element.appendChild(canvas);
   }
 }

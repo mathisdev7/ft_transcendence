@@ -1,5 +1,5 @@
-import Fastify from 'fastify'
 import websocket from '@fastify/websocket'
+import Fastify from 'fastify'
 
 const port = parseInt(process.env.PORT || '4000', 10)
 

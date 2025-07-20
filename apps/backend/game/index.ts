@@ -1,8 +1,11 @@
-import Fastify from 'fastify'
-import { fork } from 'child_process'
-import path from 'path'
-import Database from 'better-sqlite3'
-import { randomUUID } from 'crypto'
+import Database from 'better-sqlite3';
+import { fork } from 'child_process';
+import { randomUUID } from 'crypto';
+import dotenv from 'dotenv';
+import Fastify from 'fastify';
+import path from 'path';
+
+dotenv.config();
 
 const fastify = Fastify({
   logger: true
@@ -18,6 +21,8 @@ db.exec(`
     pid INTEGER NOT NULL,
     port INTEGER NOT NULL UNIQUE,
     full INTEGER DEFAULT 0,
+    player_1_id TEXT NOT NULL,
+    player_2_id TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
@@ -25,13 +30,13 @@ db.exec(`
 
 // Préparation des requêtes pour optimiser les performances
 const insertGame = db.prepare(`
-  INSERT INTO active_games (id, pid, port, full)
-  VALUES (?, ?, ?, ?)
+  INSERT INTO active_games (id, pid, port, full, player_1_id, player_2_id)
+  VALUES (?, ?, ?, ?, ?, ?)
 `)
 
 const updateGameStatus = db.prepare(`
   UPDATE active_games 
-  SET full = ?, updated_at = CURRENT_TIMESTAMP 
+  SET full = ?, player_2_id = ?, updated_at = CURRENT_TIMESTAMP
   WHERE id = ?
 `)
 
@@ -88,294 +93,84 @@ fastify.register(import("@fastify/cors"), {
   credentials: true,
 })
 
+fastify.register(import("@fastify/jwt"), {
+  secret: process.env.JWT_SECRET,
+});
+
+fastify.register(import("@fastify/cookie"), {
+  secret: process.env.COOKIE_SECRET,
+});
+
 fastify.get('/', async (request, reply) => {
   return { message: 'Lobby is running' }
 })
 
-fastify.post('/create-game', async (request, reply) => {
-  try {
-    const gameId = randomUUID()
-    const port = getNextAvailablePort()
-
-    const child = fork(path.join(__dirname, 'game-server.js'), [], {
-      env: { PORT: port.toString() }
-    })
-
-    if (!child.pid) {
-      return reply.code(500).send({
-        error: 'Failed to start game server'
-      })
-    }
-
-    // Insertion en base de données
-    insertGame.run(gameId, child.pid, port, false)
-
-    // Gestion de la fermeture du processus enfant
-    child.on('exit', (code, signal) => {
-      fastify.log.info(`Game ${gameId} exited with code ${code}, signal ${signal}`)
-      deleteGame.run(gameId)
-    })
-
-    reply.send({
-      message: 'Game server started',
-      gameId,
-      port,
-      full: false
-    })
-  } catch (error) {
-    fastify.log.error(error)
-    reply.code(500).send({
-      error: 'Failed to create game'
-    })
-  }
-})
-
-fastify.get('/games', async (request, reply) => {
-  try {
-    const games = getAllGames.all()
-    console.log(games);
-    
-    // Convertir en objet pour maintenir la compatibilité
-    const gamesObject: { [key: string]: { pid: number, port: number, full: boolean } } = {}
-    games.forEach((game: any) => {
-      gamesObject[game.id] = {
-        pid: game.pid,
-        port: game.port,
-        full: !!game.full
+fastify.post(
+  '/games/join',
+  {
+    preHandler: async (request, reply) => {
+      try {
+        await request.jwtVerify();
+      } catch (err) {
+        reply.status(401).send({ error: "unauthorized" });
       }
-    })
-    
-    return gamesObject
-  } catch (error) {
-    fastify.log.error(error)
-    reply.code(500).send({
-      error: 'Failed to retrieve games'
-    })
-  }
-})
+    },
+  },
+  async (request, reply) => {
+    try {
+      const {userId} = request.body;
+      const availableGame = getAvailableGame.get()
+      if (availableGame) {
+        const game = availableGame as any
+        
+        updateGameStatus.run(1, null, game.id)
+        reply.send({
+          message: 'Joined existing game',
+          gameId: game.id,
+          port: game.port,
+          full: 1,
+          player_1_id: game.player_1_id,
+          player_2_id: userId,
+          action: 'joined'
+        })
+      } else {
+        const gameId = randomUUID();
+        const port = getNextAvailablePort();
 
-// Route pour rejoindre une game disponible ou en créer une nouvelle
-fastify.post('/games/join', async (request, reply) => {
-  try {
-    // Chercher une game disponible
-    const availableGame = getAvailableGame.get()
-    console.log("available game elle est la:")
-    
-    if (availableGame) {
-      // Une game est disponible
-      const game = availableGame as any
-      
-      // Marquer la game comme pleine (assumant que c'est un jeu à 2 joueurs)
-      updateGameStatus.run(1, game.id) // 1 = true
-      
-      reply.send({
-        message: 'Joined existing game',
-        gameId: game.id,
-        port: game.port,
-        full: 1,
-        action: 'joined'
-      })
-    } else {
-      // Aucune game disponible, créer une nouvelle
-      const gameId = randomUUID()
-      const port = getNextAvailablePort()
+        const child = fork(path.join(__dirname, 'game-server.js'), [], {
+          env: { PORT: port.toString() }
+        })
 
-      const child = fork(path.join(__dirname, 'game-server.js'), [], {
-        env: { PORT: port.toString() }
-      })
+        if (!child.pid) {
+          return reply.code(500).send({
+            error: 'Failed to start game server'
+          })
+        }
+        insertGame.run(gameId, child.pid, port, 0, null, null)
+        const games = getAllGames.all();
+        child.on('exit', (code, signal) => {
+          fastify.log.info(`Game ${gameId} exited with code ${code}, signal ${signal}`)
+          deleteGame.run(gameId)
+        })
 
-      if (!child.pid) {
-        return reply.code(500).send({
-          error: 'Failed to start game server'
+        reply.send({
+          message: 'Created new game, waiting for opponent',
+          gameId,
+          port,
+          full: 0,
+          player_1_id: userId,
+          player_2_id: null,
+          action: 'created'
         })
       }
-
-      // Insertion en base de données (full = false car on attend un 2ème joueur)
-      const insertQuery = insertGame.run(gameId, child.pid, port, 0) // 0 = false
-      const games = getAllGames.all();
-      console.log(games)
-
-      // Gestion de la fermeture du processus enfant
-      child.on('exit', (code, signal) => {
-        fastify.log.info(`Game ${gameId} exited with code ${code}, signal ${signal}`)
-        deleteGame.run(gameId)
-      })
-
-      reply.send({
-        message: 'Created new game, waiting for opponent',
-        gameId,
-        port,
-        full: 0,
-        action: 'created'
-      })
-    }
-  } catch (error) {
-    fastify.log.error(error)
-    reply.code(500).send({
-      error: 'Failed to join or create game'
-    })
-  }
-})
-
-// Nouvelle route pour récupérer une game spécifique
-fastify.get('/games/:gameId', async (request, reply) => {
-  try {
-    const { gameId } = request.params as { gameId: string }
-    
-    if (!gameId) {
-      return reply.code(400).send({
-        error: 'Game ID is required'
-      })
-    }
-
-    const game = getGame.get(gameId)
-    
-    if (!game) {
-      return reply.code(404).send({
-        error: 'Game not found'
-      })
-    }
-
-    reply.send({
-      id: (game as any).id,
-      pid: (game as any).pid,
-      port: (game as any).port,
-      full: !!(game as any).full,
-      created_at: (game as any).created_at,
-      updated_at: (game as any).updated_at
-    })
-  } catch (error) {
-    fastify.log.error(error)
-    reply.code(500).send({
-      error: 'Failed to retrieve game'
-    })
-  }
-})
-
-// Route pour vérifier le statut d'une game (utile pour le polling côté client)
-fastify.get('/games/:gameId/status', async (request, reply) => {
-  try {
-    const { gameId } = request.params as { gameId: string }
-    
-    if (!gameId) {
-      return reply.code(400).send({
-        error: 'Game ID is required'
-      })
-    }
-
-    const game = getGame.get(gameId)
-    
-    if (!game) {
-      return reply.code(404).send({
-        error: 'Game not found'
-      })
-    }
-
-    reply.send({
-      gameId: (game as any).id,
-      port: (game as any).port,
-      full: !!(game as any).full,
-      status: !!(game as any).full ? 'full' : 'waiting'
-    })
-  } catch (error) {
-    fastify.log.error(error)
-    reply.code(500).send({
-      error: 'Failed to retrieve game status'
-    })
-  }
-})
-fastify.put('/games/:gameId/status', async (request, reply) => {
-  try {
-    const { gameId } = request.params as { gameId: string }
-    const { full } = request.body as { full: boolean }
-    
-    if (!gameId) {
-      return reply.code(400).send({
-        error: 'Game ID is required'
-      })
-    }
-
-    if (typeof full !== 'boolean') {
-      return reply.code(400).send({
-        error: 'Full status must be a boolean'
-      })
-    }
-
-    const result = updateGameStatus.run(full ? 1 : 0, gameId) // Convertir boolean en number
-    
-    if (result.changes === 0) {
-      return reply.code(404).send({
-        error: 'Game not found'
-      })
-    }
-
-    reply.send({
-      message: 'Game status updated successfully'
-    })
-  } catch (error) {
-    fastify.log.error(error)
-    reply.code(500).send({
-      error: 'Failed to update game status'
-    })
-  }
-})
-
-// Route pour supprimer une game
-fastify.delete('/games/:gameId', async (request, reply) => {
-  try {
-    const { gameId } = request.params as { gameId: string }
-    
-    if (!gameId) {
-      return reply.code(400).send({
-        error: 'Game ID is required'
-      })
-    }
-
-    const game = getGame.get(gameId)
-    
-    if (!game) {
-      return reply.code(404).send({
-        error: 'Game not found'
-      })
-    }
-
-    // Tuer le processus si il existe encore
-    try {
-      process.kill((game as any).pid, 'SIGTERM')
     } catch (error) {
-      // Le processus n'existe peut-être plus
+      fastify.log.error(error)
+      reply.code(500).send({
+        error: 'Failed to join or create game'
+      });
     }
-
-    deleteGame.run(gameId)
-
-    reply.send({
-      message: 'Game deleted successfully'
-    })
-  } catch (error) {
-    fastify.log.error(error)
-    reply.code(500).send({
-      error: 'Failed to delete game'
-    })
   }
-})
-
-// Nettoyage à la fermeture du serveur
-process.on('SIGINT', () => {
-  fastify.log.info('Shutting down lobby server...')
-  
-  // Tuer tous les processus de jeu actifs
-  const games = getAllGames.all()
-  games.forEach((game: any) => {
-    try {
-      process.kill(game.pid, 'SIGTERM')
-    } catch (error) {
-      // Le processus n'existe peut-être plus
-    }
-  })
-  
-  db.close()
-  process.exit(0)
-})
+)
 
 fastify.listen({ port: 3000 }, function (err, address) {
   if (err) {
