@@ -18,3 +18,11 @@ data/
 # Logs
 logs/
 *.log
+
+# Auth service
+.env
+database/*.db
+node_modules
+pnpm-lock.yaml
+*.db
+*.db-*

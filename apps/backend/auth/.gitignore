@@ -1,6 +1,0 @@
-.env
-database/*.db
-node_modules
-pnpm-lock.yaml
-*.db
-*.db-*

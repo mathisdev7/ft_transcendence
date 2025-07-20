@@ -1,7 +1,22 @@
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
+import winston from "winston";
 import { createSession } from "../../database/lib/createSession.ts";
 import { loginUser } from "../../database/lib/loginUser.ts";
+
+const logger = winston.createLogger({
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports: [
+    new winston.transports.Http({
+      host: process.env.LOGSTASH_HOST || "localhost",
+      port: parseInt(process.env.LOGSTASH_PORT || "5000"),
+      path: "/",
+    }),
+  ],
+});
 
 const loginBodySchema = z.object({
   email: z.string().email("invalid email format"),
@@ -70,16 +85,36 @@ export async function loginRoute(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
+      const startTime = Date.now();
+      const clientIp = request.ip;
+
       try {
         const validation = loginBodySchema.safeParse(request.body);
 
         if (!validation.success) {
+          logger.warn("Login validation failed", {
+            service: "auth",
+            action: "login",
+            clientIp,
+            error: validation.error.errors[0].message,
+            duration: Date.now() - startTime,
+          });
+
           return reply.status(400).send({
             error: validation.error.errors[0].message,
           });
         }
 
         const { email, password } = validation.data;
+
+        logger.info("Login attempt", {
+          service: "auth",
+          action: "login",
+          email,
+          clientIp,
+          userAgent: request.headers["user-agent"],
+        });
+
         const user = await loginUser(email, password);
 
         const accessToken = fastify.jwt.sign(
@@ -105,6 +140,15 @@ export async function loginRoute(fastify: FastifyInstance) {
           path: "/",
         });
 
+        logger.info("Login successful", {
+          service: "auth",
+          action: "login",
+          userId: user.id,
+          email: user.email,
+          clientIp,
+          duration: Date.now() - startTime,
+        });
+
         reply.send({
           message: "login successful",
           accessToken,
@@ -118,6 +162,14 @@ export async function loginRoute(fastify: FastifyInstance) {
           },
         });
       } catch (error: any) {
+        logger.error("Login failed", {
+          service: "auth",
+          action: "login",
+          clientIp,
+          error: error.message,
+          duration: Date.now() - startTime,
+        });
+
         reply.status(401).send({ error: error.message });
       }
     }

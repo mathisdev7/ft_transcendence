@@ -2,6 +2,7 @@ import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
 import dotenv from "dotenv";
 import Fastify from "fastify";
+import winston from "winston";
 import { initDatabase } from "./database/init.ts";
 import { registerAllRoutes } from "./routes/index.ts";
 dotenv.config();
@@ -10,8 +11,47 @@ if (!process.env.JWT_SECRET || !process.env.COOKIE_SECRET) {
   throw new Error("JWT_SECRET or COOKIE_SECRET is not set");
 }
 
+// Configure Winston logger for ELK
+const logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || "info",
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json(),
+    winston.format.printf(({ timestamp, level, message, ...meta }) => {
+      return JSON.stringify({
+        "@timestamp": timestamp,
+        level,
+        message,
+        service: "auth",
+        environment: process.env.NODE_ENV || "development",
+        ...meta
+      });
+    })
+  ),
+  transports: [
+    new winston.transports.Console(),
+    // TCP transport to Logstash
+    new winston.transports.Http({
+      host: process.env.LOGSTASH_HOST || "localhost",
+      port: parseInt(process.env.LOGSTASH_PORT || "5000"),
+      path: "/",
+    })
+  ],
+});
+
 const fastify = Fastify({
-  logger: process.env.NODE_ENV === "development" ? true : false,
+  logger: {
+    stream: {
+      write: (msg: string) => {
+        const logObj = JSON.parse(msg);
+        logger.log(logObj.level, logObj.msg, {
+          reqId: logObj.reqId,
+          req: logObj.req,
+          res: logObj.res
+        });
+      }
+    }
+  }
 });
 
 fastify.register(import("@fastify/cors"), {
@@ -56,9 +96,10 @@ fastify.listen(
   { port: Number(process.env.PORT) || 3000 },
   function (err, address) {
     if (err) {
-      fastify.log.error(err);
+      logger.error("Failed to start auth service", { error: err.message });
       process.exit(1);
     }
-    fastify.log.info(`Microservice Auth started on ${address}`);
+    logger.info("Microservice Auth started", { address, service: "auth" });
+	console.log("Microservice Auth started", { address, service: "auth" });
   }
 );
