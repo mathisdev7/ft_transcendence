@@ -281,14 +281,29 @@ export async function gameRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const waitingGameIds = gameManager.getWaitingGames();
-        const games = waitingGameIds
+
+        const allGames = gameManager.getAllGames();
+
+        const additionalWaitingGames = allGames.filter(
+          (game) =>
+            game.status === "waiting" && !waitingGameIds.includes(game.id)
+        );
+
+        const allWaitingGameIds = [
+          ...waitingGameIds,
+          ...additionalWaitingGames.map((g) => g.id),
+        ];
+
+        const games = allWaitingGameIds
           .map((gameId) => {
             const game = gameManager.getGame(gameId);
-            return game
+            return game && game.status === "waiting"
               ? {
                   gameId: game.id,
                   createdAt: game.createdAt.toISOString(),
-                  playersCount: game.players.size,
+                  playersCount: Array.from(game.players.values()).filter(
+                    (p) => p.connected
+                  ).length,
                 }
               : null;
           })

@@ -16,6 +16,10 @@ export interface GameSession {
   id: string;
   game: PongGame;
   players: Map<number, PlayerConnection>;
+  originalPlayers: Map<
+    number,
+    { userId: number; username: string; playerNumber: 1 | 2 }
+  >;
   status: "waiting" | "active" | "finished" | "cancelled";
   createdAt: Date;
   startedAt?: Date;
@@ -34,6 +38,7 @@ export class GameManager {
       id: gameId,
       game,
       players: new Map(),
+      originalPlayers: new Map(),
       status: "waiting",
       createdAt: new Date(),
     };
@@ -82,7 +87,73 @@ export class GameManager {
     socket: WebSocket
   ): boolean {
     const gameSession = this.games.get(gameId);
-    if (!gameSession || gameSession.status !== "waiting") {
+    if (!gameSession) {
+      return false;
+    }
+
+    const originalPlayer = gameSession.originalPlayers.get(user.userId);
+    if (originalPlayer) {
+      const playerConnection: PlayerConnection = {
+        userId: user.userId,
+        playerNumber: originalPlayer.playerNumber,
+        socket,
+        username: user.username,
+        connected: true,
+      };
+
+      gameSession.players.set(user.userId, playerConnection);
+
+      try {
+        const stmt = db.prepare(`
+          UPDATE player_connections
+          SET connected = ?, disconnected_at = NULL
+          WHERE game_id = ? AND user_id = ?
+        `);
+        stmt.run(1, gameSession.id, user.userId);
+      } catch (error) {
+        console.error("Failed to update player reconnection:", error);
+      }
+
+      this.setupSocketHandlers(gameSession, playerConnection);
+
+      if (gameSession.players.size === 2) {
+        if (gameSession.game.getState().isPaused) {
+          console.log(
+            `🎮 Game ${gameSession.id} was paused, resuming (status: ${gameSession.status})`
+          );
+          gameSession.game.resume();
+          this.broadcastToGame(gameSession, {
+            type: "game_resumed",
+            resumedBy: user.username,
+          });
+        }
+      }
+
+      if (gameSession.status === "active") {
+        if (
+          gameSession.players.size === 2 &&
+          gameSession.game.getState().isPaused
+        ) {
+          console.log(
+            `🎮 Resuming game ${gameSession.id} - reconnection with 2 players`
+          );
+          gameSession.game.resume();
+          this.broadcastToGame(gameSession, {
+            type: "game_resumed",
+            resumedBy: user.username,
+          });
+        }
+      }
+
+      if (gameSession.status === "waiting" && gameSession.players.size === 2) {
+        console.log(`🎮 Starting game ${gameSession.id} - 2 players joined`);
+        this.startGame(gameSession);
+      }
+
+      return true;
+    }
+
+    if (gameSession.status !== "waiting") {
       return false;
     }
 
@@ -100,11 +171,19 @@ export class GameManager {
     };
 
     gameSession.players.set(user.userId, playerConnection);
+    gameSession.originalPlayers.set(user.userId, {
+      userId: user.userId,
+      username: user.username,
+      playerNumber: playerNumber as 1 | 2,
+    });
 
     try {
       const stmt = db.prepare(`
         INSERT INTO player_connections (game_id, user_id, player_number, connected)
         VALUES (?, ?, ?, ?)
+        ON CONFLICT(game_id, user_id) DO UPDATE SET
+          connected = excluded.connected,
+          disconnected_at = NULL
       `);
       stmt.run(gameId, user.userId, playerNumber, 1);
 
@@ -191,7 +270,16 @@ export class GameManager {
     gameSession: GameSession,
     player: PlayerConnection
   ): void {
-    player.connected = false;
+    if (!gameSession.players.has(player.userId)) {
+      console.log(
+        `🎮 Player ${player.username} already disconnected from game ${gameSession.id}`
+      );
+      return;
+    }
+
+    console.log(
+      `🎮 Player ${player.username} disconnecting from game ${gameSession.id} (status: ${gameSession.status})`
+    );
 
     try {
       const stmt = db.prepare(`
@@ -204,6 +292,8 @@ export class GameManager {
       console.error("Failed to update player disconnection:", error);
     }
 
+    gameSession.players.delete(player.userId);
+
     this.broadcastToGame(gameSession, {
       type: "player_disconnected",
       playerNumber: player.playerNumber,
@@ -211,13 +301,56 @@ export class GameManager {
     });
 
     if (gameSession.status === "active") {
-      gameSession.game.pause();
+      if (!gameSession.game.getState().isPaused) {
+        gameSession.game.pause();
+        console.log(
+          `🎮 Game ${gameSession.id} paused due to player disconnection`
+        );
+      } else {
+        console.log(`🎮 Game ${gameSession.id} was already paused`);
+      }
+
+      if (gameSession.players.size < 2) {
+        gameSession.status = "waiting";
+
+        if (gameSession.game.getState().isPaused) {
+          console.log(
+            `🎮 Resuming game ${gameSession.id} before returning to waiting state`
+          );
+          gameSession.game.resume();
+        }
+
+        if (!this.waitingGames.includes(gameSession.id)) {
+          this.waitingGames.push(gameSession.id);
+        }
+
+        try {
+          const stmt = db.prepare(`
+            UPDATE games SET status = ? WHERE id = ?
+          `);
+          stmt.run("waiting", gameSession.id);
+        } catch (error) {
+          console.error("Failed to update game status to waiting:", error);
+        }
+
+        if (gameSession.gameLoop) {
+          clearInterval(gameSession.gameLoop);
+          gameSession.gameLoop = undefined;
+        }
+      }
     }
   }
 
   private startGame(gameSession: GameSession): void {
     gameSession.status = "active";
     gameSession.startedAt = new Date();
+
+    if (gameSession.game.getState().isPaused) {
+      console.log(
+        `🎮 Game ${gameSession.id} was paused, resuming before start`
+      );
+      gameSession.game.resume();
+    }
 
     try {
       const stmt = db.prepare(`
@@ -238,6 +371,9 @@ export class GameManager {
       })),
     });
 
+    console.log(
+      `🎮 Game ${gameSession.id} started with ${gameSession.players.size} players`
+    );
     this.startGameLoop(gameSession);
   }
 
@@ -291,10 +427,10 @@ export class GameManager {
 
       const winnerId =
         gameState.winner === 1
-          ? Array.from(gameSession.players.values()).find(
+          ? Array.from(gameSession.originalPlayers.values()).find(
               (p) => p.playerNumber === 1
             )?.userId
-          : Array.from(gameSession.players.values()).find(
+          : Array.from(gameSession.originalPlayers.values()).find(
               (p) => p.playerNumber === 2
             )?.userId;
 
@@ -334,13 +470,11 @@ export class GameManager {
   private broadcastToGame(gameSession: GameSession, message: any): void {
     const messageStr = JSON.stringify(message);
     for (const player of gameSession.players.values()) {
-      if (player.connected) {
-        try {
-          player.socket.send(messageStr);
-        } catch (error) {
-          console.error("Failed to send message to player:", error);
-          player.connected = false;
-        }
+      try {
+        player.socket.send(messageStr);
+      } catch (error) {
+        console.error("Failed to send message to player:", error);
+        gameSession.players.delete(player.userId);
       }
     }
   }
@@ -382,6 +516,10 @@ export class GameManager {
 
   public getWaitingGames(): string[] {
     return [...this.waitingGames];
+  }
+
+  public getAllGames(): GameSession[] {
+    return Array.from(this.games.values());
   }
 
   public getGameState(gameId: string): GameState | null {
