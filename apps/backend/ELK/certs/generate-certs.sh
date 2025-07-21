@@ -161,3 +161,7 @@ chmod 600 /tmp/certs/*-key.pem
 
 echo "Certificates generated successfully in /tmp/certs/"
 ls -la /tmp/certs/
+
+# Copy certs to project certs directory
+cp /tmp/certs/*.pem "$(dirname "$0")/"
+echo "Certificates copied to $(dirname "$0")/"
