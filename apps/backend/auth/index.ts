@@ -42,6 +42,21 @@ const logger = winston.createLogger({
   ],
 });
 
+logger.on('error', (error) => {
+  console.error('Winston logger error:', error);
+});
+
+const httpTransport = logger.transports.find(t => (t as any).name === 'http') as any;
+if (httpTransport) {
+  httpTransport.on('error', (error: any) => {
+    console.error('HTTP Transport error:', error);
+  });
+
+  httpTransport.on('logged', (info: any) => {
+    console.log('Successfully sent log to Logstash:', info.message);
+  });
+}
+
 const fastify = Fastify({
   logger: {
     stream: {
@@ -114,7 +129,19 @@ fastify.listen(
       logger.error("Failed to start auth service", { error: err.message });
       process.exit(1);
     }
-    logger.info("Microservice Auth started", { address, service: "auth" });
-	logger.info("==============================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================");
+
+    console.log(`Auth service started at ${address}`);
+
+    setTimeout(() => {
+      logger.info("Microservice Auth started", {
+        address,
+        service: "auth",
+        timestamp: new Date().toISOString(),
+        logstash_host: process.env.LOGSTASH_HOST,
+        logstash_port: process.env.LOGSTASH_PORT
+      });
+
+      console.log("Startup log sent to Logstash");
+    }, 10000);
   }
 );

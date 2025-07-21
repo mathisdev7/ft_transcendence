@@ -33,6 +33,7 @@
     "@types/bcrypt": "^5.0.2",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^24.0.4",
+	"@types/winston": "^2.4.4",
     "ts-jest": "^29.4.0"
   }
 }
