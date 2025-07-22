@@ -1,12 +1,13 @@
 import { ResetPasswordForm } from "../components/ResetPasswordForm";
+import { navigateToView, ViewType } from "../utils/navigation";
+import { waitForHashParam } from "../utils/urlParams";
 
 export async function createResetPasswordPage(): Promise<HTMLElement> {
   const container = document.createElement("div");
   container.className =
     "min-h-screen flex items-center justify-center bg-black px-4";
 
-  const url = new URL(window.location.href);
-  const token = url.searchParams.get("token");
+  const token = await waitForHashParam("token", 20, 50);
 
   if (!token) {
     container.innerHTML = `
@@ -25,9 +26,7 @@ export async function createResetPasswordPage(): Promise<HTMLElement> {
       "#go-to-forgot"
     ) as HTMLButtonElement;
     forgotBtn.addEventListener("click", () => {
-      window.dispatchEvent(
-        new CustomEvent("navigate", { detail: { path: "/forgot-password" } })
-      );
+      navigateToView(ViewType.FORGOT_PASSWORD);
     });
 
     return container;

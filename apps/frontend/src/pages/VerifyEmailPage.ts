@@ -1,12 +1,23 @@
 import { VerifyEmailForm } from "../components/VerifyEmailForm";
+import { navigateToView, ViewType } from "../utils/navigation";
+import { waitForHashParam } from "../utils/urlParams";
 
 export async function createVerifyEmailPage(): Promise<HTMLElement> {
   const container = document.createElement("div");
   container.className =
     "min-h-screen flex items-center justify-center bg-black px-4";
 
-  const url = new URL(window.location.href);
-  const token = url.searchParams.get("token");
+  let token = null;
+  const hash = window.location.hash;
+  if (hash.includes("?")) {
+    const queryString = hash.split("?")[1];
+    const params = new URLSearchParams(queryString);
+    token = params.get("token");
+  }
+
+  if (!token) {
+    token = await waitForHashParam("token", 15, 200);
+  }
 
   if (!token) {
     container.innerHTML = `
@@ -25,9 +36,7 @@ export async function createVerifyEmailPage(): Promise<HTMLElement> {
       "#go-to-register"
     ) as HTMLButtonElement;
     registerBtn.addEventListener("click", () => {
-      window.dispatchEvent(
-        new CustomEvent("navigate", { detail: { path: "/register" } })
-      );
+      navigateToView(ViewType.REGISTER);
     });
 
     return container;

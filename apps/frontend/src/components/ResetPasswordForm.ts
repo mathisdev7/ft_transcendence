@@ -1,4 +1,5 @@
 import { authAPI, type ResetPasswordData } from "../api/auth";
+import { navigateToView, ViewType } from "../utils/navigation";
 import { BaseComponent } from "./BaseComponent";
 import { Toast } from "./Toast";
 
@@ -21,51 +22,58 @@ export class ResetPasswordForm extends BaseComponent {
 
   private renderForm(): void {
     this.element.innerHTML = `
-      <div class="bg-gray-900 border border-gray-800 rounded-lg p-8 shadow-lg">
-        <h2 class="text-2xl font-bold text-white mb-6 text-center">Reset Password</h2>
+      <div class="card">
+        <div class="card-header text-center">
+          <h2 class="card-title">Reset Password</h2>
+          <p class="card-description">Enter your new password</p>
+        </div>
 
-        <form class="space-y-6">
-          <div>
-            <label for="reset-password" class="block text-sm font-medium text-gray-300 mb-2">
-              New Password
-            </label>
-            <input
-              type="password"
-              id="reset-password"
-              name="password"
-              required
-              class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
-              placeholder="Enter new password (min 8 characters)"
-            />
+        <div class="card-content">
+          <form class="space-y-6">
+            <div>
+              <label for="reset-password" class="label block mb-2">
+                New Password
+              </label>
+              <input
+                type="password"
+                id="reset-password"
+                name="password"
+                required
+                class="input"
+                placeholder="Enter new password (min 8 characters)"
+              />
+            </div>
+
+            <div>
+              <label for="reset-confirmPassword" class="label block mb-2">
+                Confirm New Password
+              </label>
+              <input
+                type="password"
+                id="reset-confirmPassword"
+                name="confirmPassword"
+                required
+                class="input"
+                placeholder="Confirm new password"
+              />
+            </div>
+
+            <button
+              type="submit"
+              class="btn btn-primary w-full"
+            >
+              <span class="button-text">🔐 Reset Password</span>
+              <div class="spinner hidden ml-2"></div>
+            </button>
+          </form>
+        </div>
+
+        <div class="card-footer">
+          <div class="text-center">
+            <a href="#login" class="text-muted-foreground hover:text-foreground transition-colors text-sm">
+              Back to Sign In
+            </a>
           </div>
-
-          <div>
-            <label for="reset-confirmPassword" class="block text-sm font-medium text-gray-300 mb-2">
-              Confirm New Password
-            </label>
-            <input
-              type="password"
-              id="reset-confirmPassword"
-              name="confirmPassword"
-              required
-              class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
-              placeholder="Confirm new password"
-            />
-          </div>
-
-          <button
-            type="submit"
-            class="w-full bg-white text-black py-2 px-4 rounded-md font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-          >
-            <span class="button-text">Reset Password</span>
-            <div class="spinner hidden ml-2"></div>
-          </button>
-        </form>
-
-        <div class="mt-6 text-center">
-          <a href="#login" class="text-gray-400 hover:text-white transition-colors">
-            Back to Sign In
-          </a>
         </div>
       </div>
     `;
@@ -96,9 +104,7 @@ export class ResetPasswordForm extends BaseComponent {
       if (loginLink) {
         loginLink.addEventListener("click", (e) => {
           e.preventDefault();
-          window.dispatchEvent(
-            new CustomEvent("navigate", { detail: { path: "/login" } })
-          );
+          navigateToView(ViewType.LOGIN);
         });
       }
 
@@ -174,9 +180,7 @@ export class ResetPasswordForm extends BaseComponent {
       Toast.success(response.message);
 
       setTimeout(() => {
-        window.dispatchEvent(
-          new CustomEvent("navigate", { detail: { path: "/login" } })
-        );
+        navigateToView(ViewType.LOGIN);
       }, 2000);
     } catch (error) {
       console.error("Password reset failed:", error);

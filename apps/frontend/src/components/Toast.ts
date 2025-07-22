@@ -31,7 +31,7 @@ export class Toast {
     const toast = document.createElement("div");
     toast.className = `
       pointer-events-auto transform transition-all duration-300 ease-in-out
-      bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-4 max-w-sm
+      card rounded-lg shadow-lg p-4 max-w-sm
       opacity-0 translate-x-full
     `;
 
@@ -43,10 +43,10 @@ export class Toast {
     };
 
     const colorMap = {
-      success: "text-green-400",
-      error: "text-red-400",
-      warning: "text-yellow-400",
-      info: "text-blue-400",
+      success: "text-success",
+      error: "text-error",
+      warning: "text-warning",
+      info: "text-info",
     };
 
     toast.innerHTML = `
@@ -57,9 +57,9 @@ export class Toast {
     }</span>
         </div>
         <div class="flex-1">
-          <p class="text-sm text-white">${options.message}</p>
+          <p class="text-sm text-foreground">${options.message}</p>
         </div>
-        <button class="flex-shrink-0 text-gray-400 hover:text-white transition-colors">
+        <button class="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors">
           <span class="text-lg">×</span>
         </button>
       </div>

@@ -1,7 +1,12 @@
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { createSession } from "../../database/lib/createSession.ts";
+import {
+  sendTwoFactorCode,
+  sendVerificationEmail,
+} from "../../database/lib/emailService.ts";
+import { createEmailVerificationCode } from "../../database/lib/emailVerificationService.ts";
 import { loginUser } from "../../database/lib/loginUser.ts";
+import { createTwoFactorCode } from "../../database/lib/twoFactorService.ts";
 
 const loginBodySchema = z.object({
   email: z.string().email("invalid email format"),
@@ -14,7 +19,9 @@ export async function loginRoute(fastify: FastifyInstance) {
     {
       schema: {
         tags: ["Authentication"],
-        summary: "Login user",
+        summary: "Login user (redirects to 2FA flow)",
+        description:
+          "This endpoint now initiates 2FA login flow. Use /auth/login/init and /auth/login/verify for new implementations.",
         body: {
           type: "object",
           required: ["email", "password"],
@@ -29,25 +36,15 @@ export async function loginRoute(fastify: FastifyInstance) {
         },
         response: {
           200: {
-            description: "Login successful",
+            description: "2FA code sent - login requires verification",
             content: {
               "application/json": {
                 schema: {
                   type: "object",
                   properties: {
                     message: { type: "string" },
-                    accessToken: { type: "string" },
-                    user: {
-                      type: "object",
-                      properties: {
-                        id: { type: "string" },
-                        email: { type: "string" },
-                        username: { type: "string" },
-                        display_name: { type: "string" },
-                        avatar_url: { type: "string" },
-                        is_verified: { type: "boolean" },
-                      },
-                    },
+                    requiresTwoFactor: { type: "boolean" },
+                    userId: { type: "number" },
                   },
                 },
               },
@@ -70,54 +67,64 @@ export async function loginRoute(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
+      const validation = loginBodySchema.safeParse(request.body);
+
+      if (!validation.success) {
+        return reply.status(400).send({
+          error: validation.error.errors[0].message,
+        });
+      }
+
+      const { email, password } = validation.data;
+
       try {
-        const validation = loginBodySchema.safeParse(request.body);
-
-        if (!validation.success) {
-          return reply.status(400).send({
-            error: validation.error.errors[0].message,
-          });
-        }
-
-        const { email, password } = validation.data;
         const user = await loginUser(email, password);
 
-        const accessToken = fastify.jwt.sign(
-          {
-            userId: user.id,
-            email: user.email,
-            username: user.username,
-          },
-          { expiresIn: "15m" }
-        );
-
-        const session = await createSession(
+        const code = await createTwoFactorCode(
           user.id,
           request.ip,
           request.headers["user-agent"]
         );
 
-        (reply as any).setCookie("refreshToken", session.refreshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "strict",
-          maxAge: 7 * 24 * 60 * 60 * 1000,
-          path: "/",
-        });
+        await sendTwoFactorCode(
+          user.email,
+          code,
+          request.headers["user-agent"]
+        );
 
         reply.send({
-          message: "login successful",
-          accessToken,
-          user: {
-            id: user.id,
-            email: user.email,
-            username: user.username,
-            display_name: user.display_name,
-            avatar_url: user.avatar_url,
-            is_verified: user.is_verified,
-          },
+          message:
+            "verification code sent to your email. use /auth/login/verify to complete login",
+          requiresTwoFactor: true,
+          userId: user.id,
         });
       } catch (error: any) {
+        if (error.message === "email not verified") {
+          try {
+            const user = error.user;
+
+            if (user && user.id) {
+              const code = await createEmailVerificationCode(user.id, email);
+              await sendVerificationEmail(email, code);
+
+              return reply.status(401).send({
+                error: "email not verified",
+                requiresEmailVerification: true,
+                email: email,
+                message: "A verification code has been sent to your email",
+              });
+            }
+          } catch (emailError) {
+            console.error("🔍 Failed to send verification email:", emailError);
+          }
+
+          return reply.status(401).send({
+            error:
+              "email not verified. please verify your email before logging in",
+            requiresEmailVerification: true,
+            email: email,
+          });
+        }
         reply.status(401).send({ error: error.message });
       }
     }

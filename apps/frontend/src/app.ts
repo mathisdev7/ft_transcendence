@@ -2,10 +2,17 @@ import { createDashboardPage } from "./pages/DashboardPage";
 import { createDocsPage } from "./pages/DocsPage";
 import { createForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { createLoginPage } from "./pages/LoginPage";
+import { createLocalGamePage } from "./pages/PlayLocal";
+import { createPlayMenuPage } from "./pages/PlayMenu";
+import { createOnlineGamePage } from "./pages/PlayOnline";
 import { createRegisterPage } from "./pages/RegisterPage";
 import { createResetPasswordPage } from "./pages/ResetPasswordPage";
+import { createTournamentGamePage } from "./pages/TournamentGame";
+import { createTournamentPage } from "./pages/TournamentPage";
+import { createTwoFactorPage } from "./pages/TwoFactorPage";
+import { createVerifyEmailCodePage } from "./pages/VerifyEmailCodePage";
 import { createVerifyEmailPage } from "./pages/VerifyEmailPage";
-import { Router } from "./router/Router";
+import { Router, ViewType } from "./router/Router";
 
 export class App {
   private router: Router;
@@ -13,90 +20,96 @@ export class App {
   constructor() {
     const appContainer = document.getElementById("app") as HTMLElement;
     this.router = new Router(appContainer);
-    this.setupRoutes();
+    this.setupViews();
   }
 
-  private setupRoutes(): void {
-    this.router.addRoutes([
+  private setupViews(): void {
+    this.router.addViews([
       {
-        path: "/",
+        type: ViewType.DASHBOARD,
         component: createDashboardPage,
         requiresAuth: true,
         title: "Dashboard",
       },
       {
-        path: "/docs",
+        type: ViewType.DOCS,
         component: createDocsPage,
         requiresAuth: false,
         title: "Documentation",
       },
       {
-        path: "/login",
+        type: ViewType.LOGIN,
         component: createLoginPage,
         requiresAuth: false,
         title: "Sign In",
       },
       {
-        path: "/register",
+        type: ViewType.REGISTER,
         component: createRegisterPage,
         requiresAuth: false,
         title: "Create Account",
       },
       {
-        path: "/forgot-password",
+        type: ViewType.FORGOT_PASSWORD,
         component: createForgotPasswordPage,
         requiresAuth: false,
         title: "Reset Password",
       },
       {
-        path: "/reset-password",
+        type: ViewType.RESET_PASSWORD,
         component: createResetPasswordPage,
         requiresAuth: false,
         title: "Reset Password",
       },
       {
-        path: "/verify-email",
+        type: ViewType.VERIFY_EMAIL,
         component: createVerifyEmailPage,
         requiresAuth: false,
         title: "Verify Email",
       },
       {
-        path: "/dashboard",
-        component: createDashboardPage,
-        requiresAuth: true,
-        title: "Dashboard",
+        type: ViewType.VERIFY_EMAIL_CODE,
+        component: createVerifyEmailCodePage,
+        requiresAuth: false,
+        title: "Verify Email Code",
       },
       {
-        path: "/404",
-        component: this.create404Page,
+        type: ViewType.TWO_FACTOR,
+        component: createTwoFactorPage,
         requiresAuth: false,
-        title: "Page Not Found",
+        title: "Two-Factor Authentication",
+      },
+      {
+        type: ViewType.PLAY_MENU,
+        component: createPlayMenuPage,
+        requiresAuth: false,
+        title: "Play",
+      },
+      {
+        type: ViewType.PLAY_LOCAL,
+        component: createLocalGamePage,
+        requiresAuth: false,
+        title: "Local Game",
+      },
+      {
+        type: ViewType.PLAY_ONLINE,
+        component: createOnlineGamePage,
+        requiresAuth: true,
+        title: "Online Game",
+      },
+      {
+        type: ViewType.TOURNAMENT,
+        component: createTournamentPage,
+        requiresAuth: false,
+        title: "Tournament",
+      },
+      {
+        type: ViewType.TOURNAMENT_GAME,
+        component: createTournamentGamePage,
+        requiresAuth: false,
+        title: "Tournament Match",
       },
     ]);
-  }
-
-  private async create404Page(): Promise<HTMLElement> {
-    const container = document.createElement("div");
-    container.className =
-      "min-h-screen flex items-center justify-center bg-black";
-    container.innerHTML = `
-      <div class="text-center">
-        <h1 class="text-6xl font-bold text-white mb-4">404</h1>
-        <p class="text-xl text-gray-400 mb-8">Page not found</p>
-        <button id="go-home" class="bg-white text-black px-6 py-3 rounded-md font-medium hover:bg-gray-200 transition-colors">
-          Go Home
-        </button>
-      </div>
-    `;
-
-    const goHomeBtn = container.querySelector("#go-home") as HTMLButtonElement;
-    goHomeBtn.addEventListener("click", () => {
-      window.dispatchEvent(
-        new CustomEvent("navigate", { detail: { path: "/" } })
-      );
-    });
-
-    return container;
   }
 
   public async start(): Promise<void> {

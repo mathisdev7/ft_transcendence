@@ -74,6 +74,22 @@ export interface ResendVerificationData {
   email: string;
 }
 
+export interface VerifyEmailCodeData {
+  email: string;
+  code: string;
+}
+
+export interface TwoFactorInitResponse {
+  message: string;
+  requiresTwoFactor: boolean;
+  userId: number;
+}
+
+export interface TwoFactorVerifyData {
+  userId: number;
+  code: string;
+}
+
 class AuthAPI {
   private async request<T>(
     endpoint: string,
@@ -106,7 +122,10 @@ class AuthAPI {
 
         window.dispatchEvent(new CustomEvent("auth:logout"));
       }
-      throw new Error((data as ApiError).error || "An error occurred");
+
+      const error = new Error(data.error || `HTTP ${response.status}`);
+      Object.assign(error, data);
+      throw error;
     }
 
     return data;
@@ -119,8 +138,29 @@ class AuthAPI {
     });
   }
 
-  async login(userData: LoginData): Promise<AuthResponse> {
-    return await this.request<AuthResponse>("/auth/login", {
+  async login(userData: LoginData): Promise<TwoFactorInitResponse> {
+    return await this.request<TwoFactorInitResponse>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async verifyTwoFactor(userId: number, code: string): Promise<AuthResponse> {
+    const response = await this.request<AuthResponse>("/auth/login/verify", {
+      method: "POST",
+      body: JSON.stringify({ userId, code }),
+    });
+
+    localStorage.setItem("accessToken", response.accessToken);
+    localStorage.setItem("user", JSON.stringify(response.user));
+
+    return response;
+  }
+
+  async initTwoFactorLogin(
+    userData: LoginData
+  ): Promise<TwoFactorInitResponse> {
+    return await this.request<TwoFactorInitResponse>("/auth/login/init", {
       method: "POST",
       body: JSON.stringify(userData),
     });
@@ -166,10 +206,25 @@ class AuthAPI {
   async resendVerification(
     data: ResendVerificationData
   ): Promise<MessageResponse> {
-    return await this.request<MessageResponse>("/auth/resend-verification", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
+    const result = await this.request<MessageResponse>(
+      "/auth/resend-verification",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      }
+    );
+    return result;
+  }
+
+  async verifyEmailCode(data: VerifyEmailCodeData): Promise<MessageResponse> {
+    const result = await this.request<MessageResponse>(
+      "/auth/verify-email-code",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      }
+    );
+    return result;
   }
 
   async forgotPassword(data: ForgotPasswordData): Promise<MessageResponse> {

@@ -1,8 +1,9 @@
 import { BaseComponent } from "../components/BaseComponent";
+import { navigateToView, ViewType } from "../utils/navigation";
 
 export class DocsPage extends BaseComponent {
   constructor() {
-    super("div", "min-h-screen bg-black");
+    super("div", "min-h-screen bg-background");
   }
 
   protected init(): void {
@@ -11,14 +12,14 @@ export class DocsPage extends BaseComponent {
 
   private renderPage(): void {
     this.element.innerHTML = `
-      <nav class="bg-gray-900 border-b border-gray-800">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav class="navbar">
+        <div class="container-responsive">
           <div class="flex justify-between items-center h-16">
             <div class="flex items-center">
-              <h1 class="text-white text-xl font-bold">Transcendence - Documentation</h1>
+              <h1 class="text-foreground text-xl font-bold">Transcendence - Documentation</h1>
             </div>
             <div class="flex items-center space-x-4">
-              <button id="back-home" class="bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors">
+              <button id="back-home" class="btn btn-secondary">
                 Retour à l'accueil
               </button>
             </div>
@@ -26,29 +27,35 @@ export class DocsPage extends BaseComponent {
         </div>
       </nav>
 
-      <main class="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <main class="container-responsive py-8">
         <div class="space-y-8">
-          <div class="bg-gray-900 border border-gray-800 rounded-lg p-8">
-            <h2 class="text-3xl font-bold text-white mb-6">🚀 Guide de démarrage</h2>
-            <p class="text-gray-300 mb-6">
-              Ce guide vous explique comment démarrer le projet ft_transcendence avec le frontend et le backend.
-            </p>
+          <div class="card">
+            <div class="card-header">
+              <h2 class="text-3xl font-bold text-foreground">🚀 Guide de démarrage</h2>
+              <p class="text-muted-foreground">
+                Ce guide vous explique comment démarrer le projet ft_transcendence avec le frontend et le backend.
+              </p>
+            </div>
           </div>
 
-          <div class="bg-gray-900 border border-gray-800 rounded-lg p-8">
-            <h3 class="text-2xl font-bold text-white mb-4">📋 Prérequis</h3>
-            <div class="space-y-3">
-              <div class="flex items-start space-x-3">
-                <span class="text-green-400 mt-1">✓</span>
-                <span class="text-gray-300">Node.js (version 18 ou supérieure)</span>
-              </div>
-              <div class="flex items-start space-x-3">
-                <span class="text-green-400 mt-1">✓</span>
-                <span class="text-gray-300">pnpm (gestionnaire de paquets)</span>
-              </div>
-              <div class="flex items-start space-x-3">
-                <span class="text-green-400 mt-1">✓</span>
-                <span class="text-gray-300">ts-node (pour exécuter TypeScript directement)</span>
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">📋 Prérequis</h3>
+            </div>
+            <div class="card-content">
+              <div class="space-y-3">
+                <div class="flex items-start space-x-3">
+                  <span class="text-success mt-1">✓</span>
+                  <span class="text-foreground">Node.js (version 18 ou supérieure)</span>
+                </div>
+                <div class="flex items-start space-x-3">
+                  <span class="text-success mt-1">✓</span>
+                  <span class="text-foreground">pnpm (gestionnaire de paquets)</span>
+                </div>
+                <div class="flex items-start space-x-3">
+                  <span class="text-success mt-1">✓</span>
+                  <span class="text-foreground">ts-node (pour exécuter TypeScript directement)</span>
+                </div>
               </div>
             </div>
           </div>
@@ -273,9 +280,7 @@ export class DocsPage extends BaseComponent {
     ) as HTMLButtonElement;
     if (backHomeBtn) {
       backHomeBtn.addEventListener("click", () => {
-        window.dispatchEvent(
-          new CustomEvent("navigate", { detail: { path: "/" } })
-        );
+        navigateToView(ViewType.DASHBOARD);
       });
     }
   }
