@@ -1,7 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { sendVerificationEmail } from "../../database/lib/emailService.ts";
-import { createToken } from "../../database/lib/tokenService.ts";
+import { createEmailVerificationCode } from "../../database/lib/emailVerificationService.ts";
 import { getUserByEmail } from "../../database/lib/userService.ts";
 
 const resendVerificationBodySchema = z.object({
@@ -77,22 +77,18 @@ export async function resendVerificationRoute(fastify: FastifyInstance) {
             });
           }
 
-          const tokenData = await createToken(
-            user.id,
-            "email_verification",
-            24
-          );
+          const code = await createEmailVerificationCode(user.id, email);
 
-          await sendVerificationEmail(email, tokenData.token);
+          await sendVerificationEmail(email, code);
 
           reply.send({
             message:
-              "verification email sent successfully. please check your inbox.",
+              "verification code sent successfully. please check your email for a 6-digit code.",
           });
         } catch (error) {
           reply.send({
             message:
-              "if email exists and is not verified, verification email has been sent",
+              "if email exists and is not verified, verification code has been sent",
           });
         }
       } catch (error: any) {

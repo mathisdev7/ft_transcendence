@@ -209,14 +209,16 @@ export class RegisterForm extends BaseComponent {
       const response = await authAPI.register(formData);
 
       Toast.success(
-        "Account created successfully! Please check your email to verify your account."
+        "Account created successfully! Please check your email for a 6-digit verification code."
       );
+
+      sessionStorage.setItem("verificationEmail", email);
 
       if (this.onRegisterSuccess) {
         this.onRegisterSuccess(response);
       }
 
-      navigateToView(ViewType.LOGIN);
+      navigateToView(ViewType.VERIFY_EMAIL_CODE);
     } catch (error) {
       Toast.error(
         error instanceof Error ? error.message : "Registration failed"

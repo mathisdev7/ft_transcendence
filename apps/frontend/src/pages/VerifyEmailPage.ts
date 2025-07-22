@@ -7,7 +7,17 @@ export async function createVerifyEmailPage(): Promise<HTMLElement> {
   container.className =
     "min-h-screen flex items-center justify-center bg-black px-4";
 
-  const token = await waitForHashParam("token", 20, 50);
+  let token = null;
+  const hash = window.location.hash;
+  if (hash.includes("?")) {
+    const queryString = hash.split("?")[1];
+    const params = new URLSearchParams(queryString);
+    token = params.get("token");
+  }
+
+  if (!token) {
+    token = await waitForHashParam("token", 15, 200);
+  }
 
   if (!token) {
     container.innerHTML = `

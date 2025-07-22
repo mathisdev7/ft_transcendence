@@ -1,6 +1,10 @@
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { sendTwoFactorCode } from "../../database/lib/emailService.ts";
+import {
+  sendTwoFactorCode,
+  sendVerificationEmail,
+} from "../../database/lib/emailService.ts";
+import { createEmailVerificationCode } from "../../database/lib/emailVerificationService.ts";
 import { loginUser } from "../../database/lib/loginUser.ts";
 import { createTwoFactorCode } from "../../database/lib/twoFactorService.ts";
 
@@ -63,17 +67,17 @@ export async function loginRoute(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
+      const validation = loginBodySchema.safeParse(request.body);
+
+      if (!validation.success) {
+        return reply.status(400).send({
+          error: validation.error.errors[0].message,
+        });
+      }
+
+      const { email, password } = validation.data;
+
       try {
-        const validation = loginBodySchema.safeParse(request.body);
-
-        if (!validation.success) {
-          return reply.status(400).send({
-            error: validation.error.errors[0].message,
-          });
-        }
-
-        const { email, password } = validation.data;
-
         const user = await loginUser(email, password);
 
         const code = await createTwoFactorCode(
@@ -96,9 +100,29 @@ export async function loginRoute(fastify: FastifyInstance) {
         });
       } catch (error: any) {
         if (error.message === "email not verified") {
+          try {
+            const user = error.user;
+
+            if (user && user.id) {
+              const code = await createEmailVerificationCode(user.id, email);
+              await sendVerificationEmail(email, code);
+
+              return reply.status(401).send({
+                error: "email not verified",
+                requiresEmailVerification: true,
+                email: email,
+                message: "A verification code has been sent to your email",
+              });
+            }
+          } catch (emailError) {
+            console.error("🔍 Failed to send verification email:", emailError);
+          }
+
           return reply.status(401).send({
             error:
               "email not verified. please verify your email before logging in",
+            requiresEmailVerification: true,
+            email: email,
           });
         }
         reply.status(401).send({ error: error.message });

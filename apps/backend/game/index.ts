@@ -20,7 +20,11 @@ const fastify = Fastify({
 });
 
 fastify.register(import("@fastify/cors"), {
-  origin: ["http://localhost:5173", "https://www.pongenmoinsbien.xyz"],
+  origin: [
+    "http://localhost:5173",
+    "http://localhost:8080",
+    "https://www.pongenmoinsbien.xyz",
+  ],
   credentials: true,
 });
 

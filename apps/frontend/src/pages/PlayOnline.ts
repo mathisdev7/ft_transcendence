@@ -367,7 +367,7 @@ export class PlayOnlinePage extends BaseComponent {
     Toast.info(`Game resumed by ${data.resumedBy}`);
   }
 
-  private handleWebSocketError(error: Event): void {
+  private handleWebSocketError(_error: Event): void {
     this.updateConnectionStatus("error", "Connection error");
   }
 

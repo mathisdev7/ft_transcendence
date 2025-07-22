@@ -136,9 +136,6 @@ export class TwoFactorPage extends BaseComponent {
     const codeInput = this.element.querySelector(
       "#verification-code"
     ) as HTMLInputElement;
-    const verifyButton = this.element.querySelector(
-      "#verify-button"
-    ) as HTMLButtonElement;
     const resendButton = this.element.querySelector(
       "#resend-code"
     ) as HTMLButtonElement;

@@ -16,9 +16,9 @@ const fastify = Fastify({
 
 fastify.register(import("@fastify/cors"), {
   origin: [
-    process.env.NODE_ENV === "development"
-      ? "http://localhost:5173"
-      : "https://www.pongenmoinsbien.xyz",
+    "http://localhost:5173",
+    "http://localhost:8080",
+    "https://www.pongenmoinsbien.xyz",
   ],
   credentials: true,
 });
@@ -63,15 +63,22 @@ fastify.register(import("@fastify/cookie"), {
 
 initDatabase();
 
+console.log("🔧 Registering routes...");
 fastify.register(registerAllRoutes);
 
+console.log("🚀 Starting server...");
 fastify.listen(
-  { port: Number(process.env.PORT) || 3000 },
+  {
+    port: Number(process.env.PORT) || 3000,
+    host: process.env.HOST || "0.0.0.0",
+  },
   function (err, address) {
     if (err) {
+      console.error("❌ Failed to start server:", err);
       fastify.log.error(err);
       process.exit(1);
     }
+    console.log(`✅ Microservice Auth started on ${address}`);
     fastify.log.info(`Microservice Auth started on ${address}`);
   }
 );

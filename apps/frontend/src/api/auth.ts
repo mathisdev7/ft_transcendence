@@ -74,6 +74,11 @@ export interface ResendVerificationData {
   email: string;
 }
 
+export interface VerifyEmailCodeData {
+  email: string;
+  code: string;
+}
+
 export interface TwoFactorInitResponse {
   message: string;
   requiresTwoFactor: boolean;
@@ -117,7 +122,10 @@ class AuthAPI {
 
         window.dispatchEvent(new CustomEvent("auth:logout"));
       }
-      throw new Error((data as ApiError).error || "An error occurred");
+
+      const error = new Error(data.error || `HTTP ${response.status}`);
+      Object.assign(error, data);
+      throw error;
     }
 
     return data;
@@ -198,10 +206,25 @@ class AuthAPI {
   async resendVerification(
     data: ResendVerificationData
   ): Promise<MessageResponse> {
-    return await this.request<MessageResponse>("/auth/resend-verification", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
+    const result = await this.request<MessageResponse>(
+      "/auth/resend-verification",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      }
+    );
+    return result;
+  }
+
+  async verifyEmailCode(data: VerifyEmailCodeData): Promise<MessageResponse> {
+    const result = await this.request<MessageResponse>(
+      "/auth/verify-email-code",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      }
+    );
+    return result;
   }
 
   async forgotPassword(data: ForgotPasswordData): Promise<MessageResponse> {

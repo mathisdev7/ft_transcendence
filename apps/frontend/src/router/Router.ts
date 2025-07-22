@@ -6,6 +6,7 @@ export enum ViewType {
   FORGOT_PASSWORD = "forgot-password",
   RESET_PASSWORD = "reset-password",
   VERIFY_EMAIL = "verify-email",
+  VERIFY_EMAIL_CODE = "verify-email-code",
   TWO_FACTOR = "two-factor",
   DASHBOARD = "dashboard",
   PLAY_MENU = "play-menu",
@@ -62,7 +63,7 @@ export class Router {
       this.navigateToView(ViewType.LOGIN);
     });
 
-    window.addEventListener("hashchange", (event) => {
+    window.addEventListener("hashchange", (_event) => {
       if (!this.isNavigating) {
         const viewType = this.getViewFromHash(window.location.hash);
         this.loadView(viewType, false);
@@ -142,6 +143,7 @@ export class Router {
       [ViewType.FORGOT_PASSWORD]: "#/forgot-password",
       [ViewType.RESET_PASSWORD]: "#/reset-password",
       [ViewType.VERIFY_EMAIL]: "#/verify-email",
+      [ViewType.VERIFY_EMAIL_CODE]: "#/verify-email-code",
       [ViewType.TWO_FACTOR]: "#/two-factor",
       [ViewType.DASHBOARD]: "#/dashboard",
       [ViewType.PLAY_MENU]: "#/play",
@@ -164,6 +166,7 @@ export class Router {
       "#/forgot-password": ViewType.FORGOT_PASSWORD,
       "#/reset-password": ViewType.RESET_PASSWORD,
       "#/verify-email": ViewType.VERIFY_EMAIL,
+      "#/verify-email-code": ViewType.VERIFY_EMAIL_CODE,
       "#/two-factor": ViewType.TWO_FACTOR,
       "#/dashboard": ViewType.DASHBOARD,
       "#/play": ViewType.PLAY_MENU,

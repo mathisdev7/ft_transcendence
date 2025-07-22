@@ -10,6 +10,7 @@ import { createResetPasswordPage } from "./pages/ResetPasswordPage";
 import { createTournamentGamePage } from "./pages/TournamentGame";
 import { createTournamentPage } from "./pages/TournamentPage";
 import { createTwoFactorPage } from "./pages/TwoFactorPage";
+import { createVerifyEmailCodePage } from "./pages/VerifyEmailCodePage";
 import { createVerifyEmailPage } from "./pages/VerifyEmailPage";
 import { Router, ViewType } from "./router/Router";
 
@@ -65,6 +66,12 @@ export class App {
         component: createVerifyEmailPage,
         requiresAuth: false,
         title: "Verify Email",
+      },
+      {
+        type: ViewType.VERIFY_EMAIL_CODE,
+        component: createVerifyEmailCodePage,
+        requiresAuth: false,
+        title: "Verify Email Code",
       },
       {
         type: ViewType.TWO_FACTOR,

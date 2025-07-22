@@ -171,73 +171,27 @@ export class LoginPage extends BaseComponent {
         error instanceof Error ? error.message : "Login failed";
 
       if (errorMessage.includes("email not verified")) {
-        this.showEmailNotVerifiedError(email);
+        if (error && (error as any).requiresEmailVerification) {
+          const errorData = error as any;
+          if (errorData.email) {
+            sessionStorage.setItem("verificationEmail", errorData.email);
+            Toast.info(
+              errorData.message ||
+                "A verification code has been sent to your email"
+            );
+            navigateToView(ViewType.VERIFY_EMAIL_CODE);
+            return;
+          }
+        }
+        sessionStorage.setItem("verificationEmail", email);
+        Toast.info("Please verify your email with the 6-digit code");
+        navigateToView(ViewType.VERIFY_EMAIL_CODE);
       } else {
         Toast.error(errorMessage);
       }
     } finally {
       this.setLoading(false);
     }
-  }
-
-  private showEmailNotVerifiedError(email: string): void {
-    const errorContainer = document.createElement("div");
-    errorContainer.className =
-      "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50";
-    errorContainer.innerHTML = `
-      <div class="bg-background border border-border rounded-lg p-6 max-w-md mx-4">
-        <div class="text-center">
-          <div class="text-4xl mb-4">📧</div>
-          <h3 class="text-xl font-bold text-foreground mb-2">Email Not Verified</h3>
-          <p class="text-muted-foreground mb-6">
-            Please verify your email address before logging in.
-            We can send you a new verification link.
-          </p>
-          <div class="space-y-3">
-            <button id="resend-verification" class="w-full btn btn-primary">
-              Send Verification Email
-            </button>
-            <button id="close-modal" class="w-full btn btn-secondary">
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(errorContainer);
-
-    const resendBtn = errorContainer.querySelector(
-      "#resend-verification"
-    ) as HTMLButtonElement;
-    const closeBtn = errorContainer.querySelector(
-      "#close-modal"
-    ) as HTMLButtonElement;
-
-    resendBtn?.addEventListener("click", async () => {
-      resendBtn.disabled = true;
-      resendBtn.textContent = "Sending...";
-
-      try {
-        await authAPI.resendVerification({ email });
-        Toast.success("Verification email sent! Check your inbox.");
-        document.body.removeChild(errorContainer);
-      } catch (error: any) {
-        Toast.error(error.message || "Failed to send verification email");
-        resendBtn.disabled = false;
-        resendBtn.textContent = "Send Verification Email";
-      }
-    });
-
-    closeBtn?.addEventListener("click", () => {
-      document.body.removeChild(errorContainer);
-    });
-
-    errorContainer.addEventListener("click", (e) => {
-      if (e.target === errorContainer) {
-        document.body.removeChild(errorContainer);
-      }
-    });
   }
 
   private setLoading(loading: boolean): void {

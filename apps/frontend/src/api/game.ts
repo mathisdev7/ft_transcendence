@@ -201,13 +201,13 @@ class GameAPI {
   }
 
   disconnectAll(): void {
-    for (const [gameId, ws] of this.wsConnections) {
+    for (const [_gameId, ws] of this.wsConnections) {
       ws.close();
     }
     this.wsConnections.clear();
   }
 
-  async createLocalGame(userId: number): Promise<{ matchId: string }> {
+  async createLocalGame(_userId: number): Promise<{ matchId: string }> {
     const token = localStorage.getItem("accessToken");
     if (!token) {
       throw new Error("No access token found");

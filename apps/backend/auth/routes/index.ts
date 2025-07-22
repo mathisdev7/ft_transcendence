@@ -11,6 +11,7 @@ import { refreshRoute } from "./auth/refresh.ts";
 import { registerRoute } from "./auth/register.ts";
 import { resendVerificationRoute } from "./auth/resend-verification.ts";
 import { resetPasswordRoute } from "./auth/reset-password.ts";
+import { verifyEmailCodeRoute } from "./auth/verify-email-code.ts";
 import { verifyEmailRoute } from "./auth/verify-email.ts";
 
 import { healthRoute } from "./health/health.ts";
@@ -24,6 +25,7 @@ export async function registerAllRoutes(fastify: FastifyInstance) {
   await fastify.register(refreshRoute);
   await fastify.register(meRoute);
   await fastify.register(verifyEmailRoute);
+  await fastify.register(verifyEmailCodeRoute);
   await fastify.register(resendVerificationRoute);
   await fastify.register(forgotPasswordRoute);
   await fastify.register(resetPasswordRoute);

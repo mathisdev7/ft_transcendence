@@ -22,14 +22,20 @@ export const loginUser = async (email: string, password: string) => {
     throw new Error("invalid credentials");
   }
 
-  if (!user.is_verified) {
-    throw new Error("email not verified");
-  }
-
   const isPasswordValid = await bcrypt.compare(password, user.password_hash);
 
   if (!isPasswordValid) {
     throw new Error("invalid credentials");
+  }
+
+  if (!user.is_verified) {
+    const error = new Error("email not verified");
+    (error as any).user = {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+    };
+    throw error;
   }
 
   db.prepare(
@@ -43,5 +49,9 @@ export const loginUser = async (email: string, password: string) => {
     display_name: user.display_name,
     avatar_url: user.avatar_url,
     is_verified: user.is_verified,
+    is_active: user.is_active,
+    created_at: user.created_at,
+    updated_at: user.updated_at,
+    last_login: user.last_login,
   };
 };

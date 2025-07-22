@@ -1,0 +1,71 @@
+version: "3.8"
+
+services:
+  auth-backend:
+    build:
+      context: ./apps/backend/auth
+      dockerfile: Dockerfile
+    container_name: ft_transcendence_auth_dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - HOST=0.0.0.0
+      - JWT_SECRET=${JWT_SECRET:-dev-jwt-secret-key}
+      - COOKIE_SECRET=${COOKIE_SECRET:-dev-cookie-secret-key}
+    volumes:
+      - ./apps/backend/auth:/app
+      - /app/node_modules
+    networks:
+      - transcendence-dev-network
+    restart: unless-stopped
+    command: ["pnpm", "dev"]
+
+  game-backend:
+    build:
+      context: ./apps/backend/game
+      dockerfile: Dockerfile
+    container_name: ft_transcendence_game_dev
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=development
+      - PORT=4000
+      - HOST=0.0.0.0
+      - JWT_SECRET=${JWT_SECRET:-dev-jwt-secret-key}
+      - COOKIE_SECRET=${COOKIE_SECRET:-dev-cookie-secret-key}
+    volumes:
+      - ./apps/backend/game:/app
+      - /app/node_modules
+    networks:
+      - transcendence-dev-network
+    restart: unless-stopped
+    command: ["pnpm", "dev"]
+    depends_on:
+      - auth-backend
+
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile.dev
+    container_name: ft_transcendence_frontend_dev
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:3000
+      - VITE_GAME_URL=http://localhost:4000
+    volumes:
+      - ./apps/frontend:/app
+      - /app/node_modules
+    networks:
+      - transcendence-dev-network
+    restart: unless-stopped
+    depends_on:
+      - auth-backend
+      - game-backend
+
+networks:
+  transcendence-dev-network:
+    driver: bridge

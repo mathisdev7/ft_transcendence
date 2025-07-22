@@ -1,0 +1,78 @@
+version: "3.8"
+
+services:
+  auth-backend:
+    build:
+      context: ./apps/backend/auth
+      dockerfile: Dockerfile
+    container_name: ft_transcendence_auth
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOST=0.0.0.0
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
+      - COOKIE_SECRET=${COOKIE_SECRET:-your-super-secret-cookie-key-change-this-in-production}
+    volumes:
+      - ./apps/backend/auth/database:/app/database
+    networks:
+      - transcendence-network
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3000/auth/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  game-backend:
+    build:
+      context: ./apps/backend/game
+      dockerfile: Dockerfile
+    container_name: ft_transcendence_game
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - HOST=0.0.0.0
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
+      - COOKIE_SECRET=${COOKIE_SECRET:-your-super-secret-cookie-key-change-this-in-production}
+    volumes:
+      - ./apps/backend/game/database:/app/database
+      - game-db:/app
+    networks:
+      - transcendence-network
+    restart: unless-stopped
+    depends_on:
+      - auth-backend
+
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+    container_name: ft_transcendence_frontend
+    ports:
+      - "8080:80"
+    networks:
+      - transcendence-network
+    restart: unless-stopped
+    depends_on:
+      - auth-backend
+      - game-backend
+
+volumes:
+  game-db:
+    driver: local
+
+networks:
+  transcendence-network:
+    driver: bridge
