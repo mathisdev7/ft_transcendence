@@ -191,7 +191,7 @@ export class DashboardPage extends BaseComponent {
             </div>
           </div>
         </div>
-        <div class="card mb-8">
+        <div class="card mb-8">.
           <div class="card-header">
             <h3 class="card-title">👤 Profile Information</h3>
           </div>
