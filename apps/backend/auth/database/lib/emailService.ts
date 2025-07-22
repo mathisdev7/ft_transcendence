@@ -12,7 +12,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export const sendVerificationEmail = async (email: string, token: string) => {
   const verificationUrl = `${
     process.env.FRONTEND_URL || "http://localhost:5173"
-  }/verify-email?token=${token}`;
+  }#/verify-email?token=${token}`;
 
   try {
     const { data, error } = await resend.emails.send({
@@ -45,7 +45,7 @@ export const sendVerificationEmail = async (email: string, token: string) => {
 export const sendPasswordResetEmail = async (email: string, token: string) => {
   const resetUrl = `${
     process.env.FRONTEND_URL || "http://localhost:5173"
-  }/reset-password?token=${token}`;
+  }#/reset-password?token=${token}`;
 
   try {
     const { data, error } = await resend.emails.send({
@@ -72,6 +72,47 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
     return data;
   } catch (error) {
     console.error("Error sending password reset email:", error);
+    throw error;
+  }
+};
+
+export const sendTwoFactorCode = async (
+  email: string,
+  code: string,
+  userAgent?: string
+) => {
+  const deviceInfo = userAgent ? `from ${userAgent.split(" ")[0]}` : "";
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: process.env.FROM_EMAIL || "noreply@sendyb.com",
+      to: [email],
+      subject: "Your Login Verification Code",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Login Verification Code</h2>
+          <p>Someone is trying to sign in to your account ${deviceInfo}.</p>
+          <div style="background-color: #f8f9fa; border: 2px solid #007bff; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
+            <h3 style="margin: 0; color: #007bff;">Your verification code:</h3>
+            <div style="font-size: 32px; font-weight: bold; color: #007bff; letter-spacing: 4px; margin: 10px 0;">${code}</div>
+          </div>
+          <p><strong>This code will expire in 10 minutes.</strong></p>
+          <p>If you didn't request this login, please ignore this email and consider changing your password.</p>
+          <hr style="border: none; border-top: 1px solid #dee2e6; margin: 20px 0;">
+          <p style="font-size: 12px; color: #6c757d;">
+            This is an automated security email from Transcendence. Please do not reply to this email.
+          </p>
+        </div>
+      `,
+    });
+
+    if (error) {
+      throw new Error(`Failed to send 2FA code email: ${error.message}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error sending 2FA code email:", error);
     throw error;
   }
 };

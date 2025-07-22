@@ -79,6 +79,20 @@ const createSessionsTable = `
   )
 `;
 
+const createTwoFactorCodesTable = `
+  CREATE TABLE IF NOT EXISTS two_factor_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    code TEXT NOT NULL,
+    expires_at DATETIME NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
+    ip_address TEXT,
+    user_agent TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+  )
+`;
+
 const createIndexes = [
   "CREATE INDEX IF NOT EXISTS idx_users_email ON users (email)",
   "CREATE INDEX IF NOT EXISTS idx_users_username ON users (username)",
@@ -86,6 +100,8 @@ const createIndexes = [
   "CREATE INDEX IF NOT EXISTS idx_tokens_token ON tokens (token)",
   "CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions (user_id)",
   "CREATE INDEX IF NOT EXISTS idx_sessions_refresh_token ON sessions (refresh_token)",
+  "CREATE INDEX IF NOT EXISTS idx_two_factor_codes_user_id ON two_factor_codes (user_id)",
+  "CREATE INDEX IF NOT EXISTS idx_two_factor_codes_code ON two_factor_codes (code)",
 ];
 
 const createUpdateTrigger = `
@@ -104,6 +120,7 @@ export function initDatabase() {
     db.exec(createUsersTable);
     db.exec(createTokensTable);
     db.exec(createSessionsTable);
+    db.exec(createTwoFactorCodesTable);
 
     createIndexes.forEach((indexQuery) => {
       db.exec(indexQuery);
@@ -129,11 +146,17 @@ export function cleanupExpiredTokens() {
     WHERE expires_at < datetime('now')
   `);
 
+  const deleteExpiredTwoFactorCodes = db.prepare(`
+    DELETE FROM two_factor_codes
+    WHERE expires_at < datetime('now')
+  `);
+
   const deletedTokens = deleteExpiredTokens.run();
   const deletedSessions = deleteExpiredSessions.run();
+  const deletedCodes = deleteExpiredTwoFactorCodes.run();
 
   console.log(
-    `cleaning ${deletedTokens.changes} tokens and ${deletedSessions.changes} sessions deleted`
+    `cleaning ${deletedTokens.changes} tokens, ${deletedSessions.changes} sessions, and ${deletedCodes.changes} 2FA codes deleted`
   );
 }
 

@@ -1,4 +1,3 @@
-import { ViewManager, ViewType } from "./core/ViewManager";
 import { createDashboardPage } from "./pages/DashboardPage";
 import { createDocsPage } from "./pages/DocsPage";
 import { createForgotPasswordPage } from "./pages/ForgotPasswordPage";
@@ -8,19 +7,23 @@ import { createPlayMenuPage } from "./pages/PlayMenu";
 import { createOnlineGamePage } from "./pages/PlayOnline";
 import { createRegisterPage } from "./pages/RegisterPage";
 import { createResetPasswordPage } from "./pages/ResetPasswordPage";
+import { createTournamentGamePage } from "./pages/TournamentGame";
+import { createTournamentPage } from "./pages/TournamentPage";
+import { createTwoFactorPage } from "./pages/TwoFactorPage";
 import { createVerifyEmailPage } from "./pages/VerifyEmailPage";
+import { Router, ViewType } from "./router/Router";
 
 export class App {
-  private viewManager: ViewManager;
+  private router: Router;
 
   constructor() {
     const appContainer = document.getElementById("app") as HTMLElement;
-    this.viewManager = new ViewManager(appContainer);
+    this.router = new Router(appContainer);
     this.setupViews();
   }
 
   private setupViews(): void {
-    this.viewManager.addViews([
+    this.router.addViews([
       {
         type: ViewType.DASHBOARD,
         component: createDashboardPage,
@@ -64,6 +67,12 @@ export class App {
         title: "Verify Email",
       },
       {
+        type: ViewType.TWO_FACTOR,
+        component: createTwoFactorPage,
+        requiresAuth: false,
+        title: "Two-Factor Authentication",
+      },
+      {
         type: ViewType.PLAY_MENU,
         component: createPlayMenuPage,
         requiresAuth: false,
@@ -81,10 +90,22 @@ export class App {
         requiresAuth: true,
         title: "Online Game",
       },
+      {
+        type: ViewType.TOURNAMENT,
+        component: createTournamentPage,
+        requiresAuth: false,
+        title: "Tournament",
+      },
+      {
+        type: ViewType.TOURNAMENT_GAME,
+        component: createTournamentGamePage,
+        requiresAuth: false,
+        title: "Tournament Match",
+      },
     ]);
   }
 
   public async start(): Promise<void> {
-    await this.viewManager.start();
+    await this.router.start();
   }
 }

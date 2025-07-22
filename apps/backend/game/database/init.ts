@@ -78,12 +78,53 @@ const createPlayerConnectionsTable = `
   )
 `;
 
+const createTournamentsTable = `
+  CREATE TABLE IF NOT EXISTS tournaments (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    user_id INTEGER NOT NULL,
+    status TEXT CHECK (status IN ('completed')) DEFAULT 'completed',
+    winner_name TEXT NOT NULL,
+    players_count INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    completed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`;
+
+const createTournamentPlayersTable = `
+  CREATE TABLE IF NOT EXISTS tournament_players (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tournament_id TEXT NOT NULL,
+    player_name TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    FOREIGN KEY (tournament_id) REFERENCES tournaments (id) ON DELETE CASCADE
+  )
+`;
+
+const createTournamentMatchesTable = `
+  CREATE TABLE IF NOT EXISTS tournament_matches (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tournament_id TEXT NOT NULL,
+    round INTEGER NOT NULL,
+    position INTEGER NOT NULL,
+    player1_name TEXT,
+    player2_name TEXT,
+    winner_name TEXT,
+    player1_score INTEGER DEFAULT 0,
+    player2_score INTEGER DEFAULT 0,
+    FOREIGN KEY (tournament_id) REFERENCES tournaments (id) ON DELETE CASCADE
+  )
+`;
+
 const createIndexes = [
   "CREATE INDEX IF NOT EXISTS idx_games_status ON games (status)",
   "CREATE INDEX IF NOT EXISTS idx_games_player1 ON games (player1_id)",
   "CREATE INDEX IF NOT EXISTS idx_games_player2 ON games (player2_id)",
   "CREATE INDEX IF NOT EXISTS idx_player_connections_game_id ON player_connections (game_id)",
   "CREATE INDEX IF NOT EXISTS idx_player_connections_user_id ON player_connections (user_id)",
+  "CREATE INDEX IF NOT EXISTS idx_tournaments_user_id ON tournaments (user_id)",
+  "CREATE INDEX IF NOT EXISTS idx_tournament_players_tournament_id ON tournament_players (tournament_id)",
+  "CREATE INDEX IF NOT EXISTS idx_tournament_matches_tournament_id ON tournament_matches (tournament_id)",
 ];
 
 export function initDatabase() {
@@ -91,6 +132,9 @@ export function initDatabase() {
     db.exec(createGamesTable);
     db.exec(createGameStatesTable);
     db.exec(createPlayerConnectionsTable);
+    db.exec(createTournamentsTable);
+    db.exec(createTournamentPlayersTable);
+    db.exec(createTournamentMatchesTable);
 
     createIndexes.forEach((indexSQL) => {
       db.exec(indexSQL);

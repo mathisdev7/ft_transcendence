@@ -23,70 +23,77 @@ export class RegisterForm extends BaseComponent {
 
   private renderForm(): void {
     this.element.innerHTML = `
-      <div class="bg-gray-900 border border-gray-800 rounded-lg p-8 shadow-lg">
-        <h2 class="text-2xl font-bold text-white mb-6 text-center">Create Account</h2>
+      <div class="card">
+        <div class="card-header text-center">
+          <h2 class="card-title">Create Account</h2>
+          <p class="card-description">Join the Transcendence community</p>
+        </div>
 
-        <form class="space-y-6">
-          <div>
-            <label for="register-email" class="block text-sm font-medium text-gray-300 mb-2">
-              Email Address
-            </label>
-            <input
-              type="email"
-              id="register-email"
-              name="email"
-              required
-              class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
-              placeholder="Enter your email"
-            />
-          </div>
+        <div class="card-content">
+          <form class="space-y-6">
+            <div>
+              <label for="register-email" class="label block mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                id="register-email"
+                name="email"
+                required
+                class="input"
+                placeholder="Enter your email"
+              />
+            </div>
 
-          <div>
-            <label for="register-password" class="block text-sm font-medium text-gray-300 mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              id="register-password"
-              name="password"
-              required
-              class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
-              placeholder="Enter your password (min 8 characters)"
-            />
-          </div>
+            <div>
+              <label for="register-password" class="label block mb-2">
+                Password
+              </label>
+              <input
+                type="password"
+                id="register-password"
+                name="password"
+                required
+                class="input"
+                placeholder="Enter your password (min 8 characters)"
+              />
+            </div>
 
-          <div>
-            <label for="register-confirmPassword" class="block text-sm font-medium text-gray-300 mb-2">
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              id="register-confirmPassword"
-              name="confirmPassword"
-              required
-              class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
-              placeholder="Confirm your password"
-            />
-          </div>
+            <div>
+              <label for="register-confirmPassword" class="label block mb-2">
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                id="register-confirmPassword"
+                name="confirmPassword"
+                required
+                class="input"
+                placeholder="Confirm your password"
+              />
+            </div>
 
-          <div class="text-xs text-gray-400">
-            By creating an account, you agree to our terms of service and privacy policy.
-          </div>
+            <div class="text-xs text-muted-foreground">
+              By creating an account, you agree to our terms of service and privacy policy.
+            </div>
 
-          <button
-            type="submit"
-            class="w-full bg-white text-black py-2 px-4 rounded-md font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-          >
-            <span class="button-text">Create Account</span>
-            <div class="spinner hidden ml-2"></div>
-          </button>
-        </form>
+            <button
+              type="submit"
+              class="btn btn-primary w-full"
+            >
+              <span class="button-text">✨ Create Account</span>
+              <div class="spinner hidden ml-2"></div>
+            </button>
+          </form>
+        </div>
 
-        <div class="mt-6 text-center">
-          <span class="text-gray-400">Already have an account? </span>
-          <a href="#login" class="text-white hover:text-gray-300 font-medium transition-colors">
-            Sign in
-          </a>
+        <div class="card-footer">
+          <p class="text-center text-muted-foreground text-sm">
+            Already have an account?
+            <a href="#login" class="text-foreground hover:underline font-medium ml-1">
+              Sign in
+            </a>
+          </p>
         </div>
       </div>
     `;
@@ -104,13 +111,6 @@ export class RegisterForm extends BaseComponent {
       this.submitButton = this.element.querySelector(
         'button[type="submit"]'
       ) as HTMLButtonElement;
-
-      console.log("RegisterForm elements:", {
-        emailInput: this.emailInput,
-        passwordInput: this.passwordInput,
-        confirmPasswordInput: this.confirmPasswordInput,
-        submitButton: this.submitButton,
-      });
     }, 0);
   }
 
@@ -119,10 +119,8 @@ export class RegisterForm extends BaseComponent {
       const form = this.element.querySelector("form") as HTMLFormElement;
       if (form) {
         form.addEventListener("submit", (e) => {
-          console.log("Register form submit event triggered");
           this.handleSubmit(e);
         });
-        console.log("Register form event listener added");
       } else {
         console.error("Form not found in RegisterForm");
       }
@@ -133,7 +131,6 @@ export class RegisterForm extends BaseComponent {
       if (loginLink) {
         loginLink.addEventListener("click", (e) => {
           e.preventDefault();
-          console.log("Login link clicked");
           navigateToView(ViewType.LOGIN);
         });
       }
@@ -172,15 +169,12 @@ export class RegisterForm extends BaseComponent {
 
   private async handleSubmit(e: Event): Promise<void> {
     e.preventDefault();
-    console.log("Register handleSubmit called");
 
     if (this.isLoading) {
-      console.log("Already loading, returning");
       return;
     }
 
     if (!this.emailInput || !this.passwordInput || !this.confirmPasswordInput) {
-      console.error("Form inputs not found");
       Toast.error("Form not ready, please try again");
       return;
     }
@@ -188,12 +182,6 @@ export class RegisterForm extends BaseComponent {
     const email = this.emailInput.value.trim();
     const password = this.passwordInput.value;
     const confirmPassword = this.confirmPasswordInput.value;
-
-    console.log("Register form data:", {
-      email,
-      hasPassword: !!password,
-      hasConfirmPassword: !!confirmPassword,
-    });
 
     if (!email || !password || !confirmPassword) {
       Toast.error("Please fill in all fields");
@@ -218,9 +206,7 @@ export class RegisterForm extends BaseComponent {
     this.setLoading(true);
 
     try {
-      console.log("Attempting registration...");
       const response = await authAPI.register(formData);
-      console.log("Registration successful:", response);
 
       Toast.success(
         "Account created successfully! Please check your email to verify your account."
@@ -232,7 +218,6 @@ export class RegisterForm extends BaseComponent {
 
       navigateToView(ViewType.LOGIN);
     } catch (error) {
-      console.error("Registration failed:", error);
       Toast.error(
         error instanceof Error ? error.message : "Registration failed"
       );
@@ -245,7 +230,6 @@ export class RegisterForm extends BaseComponent {
     this.isLoading = loading;
 
     if (!this.submitButton) {
-      console.error("Submit button not found");
       return;
     }
 

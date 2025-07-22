@@ -1,4 +1,5 @@
 import { authAPI } from "../api/auth";
+import { navigateToView, ViewType } from "../utils/navigation";
 import { BaseComponent } from "./BaseComponent";
 import { Toast } from "./Toast";
 
@@ -8,21 +9,18 @@ export class VerifyEmailForm extends BaseComponent {
   constructor(token: string) {
     super("div", "w-full max-w-md mx-auto");
     this.token = token;
-
-    setTimeout(() => {
-      this.verifyEmail();
-    }, 0);
   }
 
   protected init(): void {
     this.renderForm();
+    this.verifyEmail();
   }
 
   private renderForm(): void {
     this.element.innerHTML = `
-      <div class="bg-gray-900 border border-gray-800 rounded-lg p-8 shadow-lg">
+      <div class="card">
         <div class="text-center">
-          <h2 class="text-2xl font-bold text-white mb-6">Email Verification</h2>
+          <h2 class="card-title mb-6">Email Verification</h2>
 
           <div id="verification-content">
             <div class="flex items-center justify-center mb-4">
@@ -103,9 +101,7 @@ export class VerifyEmailForm extends BaseComponent {
     ) as HTMLButtonElement;
     if (loginBtn) {
       loginBtn.addEventListener("click", () => {
-        window.dispatchEvent(
-          new CustomEvent("navigate", { detail: { path: "/login" } })
-        );
+        navigateToView(ViewType.LOGIN);
       });
     }
 
@@ -114,9 +110,7 @@ export class VerifyEmailForm extends BaseComponent {
     ) as HTMLButtonElement;
     if (registerBtn) {
       registerBtn.addEventListener("click", () => {
-        window.dispatchEvent(
-          new CustomEvent("navigate", { detail: { path: "/register" } })
-        );
+        navigateToView(ViewType.REGISTER);
       });
     }
 
@@ -243,9 +237,7 @@ export class VerifyEmailForm extends BaseComponent {
       Toast.success(response.message);
 
       setTimeout(() => {
-        window.dispatchEvent(
-          new CustomEvent("navigate", { detail: { path: "/login" } })
-        );
+        navigateToView(ViewType.LOGIN);
       }, 2000);
     } catch (error) {
       console.error("Failed to resend verification email:", error);

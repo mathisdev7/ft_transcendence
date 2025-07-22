@@ -15,7 +15,7 @@ export class PlayMenuPage extends BaseComponent {
   private refreshInterval: number = 0;
 
   constructor() {
-    super("div", "min-h-screen bg-black text-white");
+    super("div", "min-h-screen bg-background");
   }
 
   protected init(): void {
@@ -26,74 +26,72 @@ export class PlayMenuPage extends BaseComponent {
 
   private renderPage(): void {
     this.element.innerHTML = `
-      <div class="container mx-auto px-4 py-8">
+      <div class="container-responsive py-8">
         <div class="text-center mb-8">
-          <h1 class="text-4xl font-bold mb-4">Play Pong</h1>
-          <p class="text-gray-400 text-lg">Choose your game mode</p>
+          <h1 class="text-4xl font-bold text-foreground mb-4">Play Pong</h1>
+          <p class="text-muted-foreground text-lg">Choose your game mode</p>
         </div>
 
         <div class="max-w-4xl mx-auto">
-          <!-- Game Mode Selection -->
           <div class="grid md:grid-cols-2 gap-8 mb-8">
-            <!-- Local Mode -->
-            <div class="bg-gray-900 border border-gray-700 rounded-lg p-6">
-              <div class="text-center mb-6">
+            <div class="card">
+              <div class="card-content text-center">
                 <div class="text-4xl mb-4">🏓</div>
-                <h3 class="text-xl font-bold mb-2">Local Game</h3>
-                <p class="text-gray-400 mb-4">Play with a friend on the same device</p>
-                <ul class="text-sm text-gray-500 mb-4 text-left">
+                <h3 class="card-title mb-2">Local Game</h3>
+                <p class="card-description mb-4">Play with a friend on the same device</p>
+                <ul class="text-sm text-muted-foreground mb-4 text-left space-y-1">
                   <li>• Player 1: W/S keys</li>
                   <li>• Player 2: ↑/↓ arrow keys</li>
                   <li>• First to 11 points wins</li>
                 </ul>
+                <button id="local-game-btn" class="btn btn-primary w-full font-semibold">
+                  Start Local Game
+                </button>
               </div>
-              <button id="local-game-btn" class="w-full bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-lg font-semibold transition-colors">
-                Start Local Game
-              </button>
             </div>
 
-            <!-- Online Mode -->
-            <div class="bg-gray-900 border border-gray-700 rounded-lg p-6">
-              <div class="text-center mb-6">
+            <div class="card">
+              <div class="card-content text-center">
                 <div class="text-4xl mb-4">🌐</div>
-                <h3 class="text-xl font-bold mb-2">Online Game</h3>
-                <p class="text-gray-400 mb-4">Play against other players online</p>
-                <ul class="text-sm text-gray-500 mb-4 text-left">
+                <h3 class="card-title mb-2">Online Game</h3>
+                <p class="card-description mb-4">Play against other players online</p>
+                <ul class="text-sm text-muted-foreground mb-4 text-left space-y-1">
                   <li>• Real-time multiplayer</li>
                   <li>• Server-side game logic</li>
                   <li>• Competitive scoring</li>
                 </ul>
-              </div>
-              <div class="space-y-3">
-                <button id="create-game-btn" class="w-full bg-green-600 hover:bg-green-500 px-6 py-3 rounded-lg font-semibold transition-colors">
-                  Create Online Game
-                </button>
-                <button id="refresh-games-btn" class="w-full bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded-lg text-sm transition-colors">
-                  Refresh Games List
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Waiting Games List -->
-          <div class="bg-gray-900 border border-gray-700 rounded-lg p-6">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-lg font-bold">Join Existing Games</h3>
-              <span id="games-count" class="text-sm text-gray-400">0 games waiting</span>
-            </div>
-
-            <div id="waiting-games-list" class="space-y-3">
-              <div class="text-center text-gray-500 py-8">
-                <div class="text-2xl mb-2">🎮</div>
-                <p>No games waiting for players</p>
-                <p class="text-sm">Create a new game or refresh the list</p>
+                <div class="space-y-3">
+                  <button id="create-game-btn" class="btn btn-success w-full font-semibold">
+                    Create Online Game
+                  </button>
+                  <button id="refresh-games-btn" class="btn btn-secondary w-full text-sm">
+                    Refresh Games List
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Back Button -->
+          <div class="card">
+            <div class="card-header">
+              <div class="flex items-center justify-between">
+                <h3 class="card-title">Join Existing Games</h3>
+                <span id="games-count" class="text-sm text-muted-foreground">0 games waiting</span>
+              </div>
+            </div>
+            <div class="card-content">
+              <div id="waiting-games-list" class="space-y-3">
+                <div class="text-center text-muted-foreground py-8">
+                  <div class="text-2xl mb-2">🎮</div>
+                  <p>No games waiting for players</p>
+                  <p class="text-sm">Create a new game or refresh the list</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="text-center mt-8">
-            <button id="back-btn" class="bg-gray-600 hover:bg-gray-500 px-6 py-2 rounded-lg font-semibold transition-colors">
+            <button id="back-btn" class="btn btn-secondary font-semibold">
               Back to Dashboard
             </button>
           </div>
@@ -183,7 +181,7 @@ export class PlayMenuPage extends BaseComponent {
 
     if (games.length === 0) {
       gamesList.innerHTML = `
-        <div class="text-center text-gray-500 py-8">
+        <div class="text-center text-muted-foreground py-8">
           <div class="text-2xl mb-2">🎮</div>
           <p>No games waiting for players</p>
           <p class="text-sm">Create a new game to start playing</p>
@@ -195,26 +193,33 @@ export class PlayMenuPage extends BaseComponent {
     gamesList.innerHTML = games
       .map(
         (game) => `
-      <div class="flex items-center justify-between bg-gray-800 rounded-lg p-4 border border-gray-600">
-        <div class="flex-1">
-          <div class="flex items-center space-x-3">
-            <div class="text-green-400">●</div>
-            <div>
-              <p class="font-medium">Game ${game.gameId.substring(0, 8)}...</p>
-              <p class="text-sm text-gray-400">
-                Created ${this.formatTimeAgo(game.createdAt)} • ${
+      <div class="card">
+        <div class="card-content">
+          <div class="flex items-center justify-between">
+            <div class="flex-1">
+              <div class="flex items-center space-x-3">
+                <div class="text-success">●</div>
+                <div>
+                  <p class="font-medium text-foreground">Game ${game.gameId.substring(
+                    0,
+                    8
+                  )}...</p>
+                  <p class="text-sm text-muted-foreground">
+                    Created ${this.formatTimeAgo(game.createdAt)} • ${
           game.playersCount
         }/2 players
-              </p>
+                  </p>
+                </div>
+              </div>
             </div>
+            <button
+              class="join-game-btn btn btn-primary text-sm font-medium"
+              data-game-id="${game.gameId}"
+            >
+              Join Game
+            </button>
           </div>
         </div>
-        <button
-          class="join-game-btn bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-          data-game-id="${game.gameId}"
-        >
-          Join Game
-        </button>
       </div>
     `
       )
@@ -242,20 +247,12 @@ export class PlayMenuPage extends BaseComponent {
     button.textContent = "Joining...";
 
     try {
-      console.log("About to join game with ID:", gameId);
       await gameAPI.joinGame(gameId);
       Toast.success("Joined game successfully!");
 
-      console.log("Setting gameId in sessionStorage:", gameId);
       sessionStorage.setItem("currentGameId", gameId);
-      console.log(
-        "Stored gameId in sessionStorage:",
-        sessionStorage.getItem("currentGameId")
-      );
-      console.log("About to navigate to PLAY_ONLINE view");
       navigateToView(ViewType.PLAY_ONLINE);
     } catch (error: any) {
-      console.error("Failed to join game:", error);
       Toast.error(error.message || "Failed to join game");
       button.disabled = false;
       button.textContent = "Join Game";

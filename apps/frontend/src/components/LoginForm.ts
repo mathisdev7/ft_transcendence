@@ -1,4 +1,4 @@
-import { authAPI, type LoginData } from "../api/auth";
+import { authAPI } from "../api/auth";
 import { navigateToView, ViewType } from "../utils/navigation";
 import { BaseComponent } from "./BaseComponent";
 import { Toast } from "./Toast";
@@ -22,60 +22,65 @@ export class LoginForm extends BaseComponent {
 
   private renderForm(): void {
     this.element.innerHTML = `
-      <div class="bg-gray-900 border border-gray-800 rounded-lg p-8 shadow-lg">
-        <h2 class="text-2xl font-bold text-white mb-6 text-center">Sign In</h2>
+      <div class="card">
+        <div class="card-header text-center">
+          <h2 class="card-title">Sign In</h2>
+          <p class="card-description">Welcome back to Transcendence</p>
+        </div>
 
-        <form class="space-y-6">
-          <div>
-            <label for="login-email" class="block text-sm font-medium text-gray-300 mb-2">
-              Email Address
-            </label>
-            <input
-              type="email"
-              id="login-email"
-              name="email"
-              required
-              class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
-              placeholder="Enter your email"
-            />
-          </div>
+        <div class="card-content">
+          <form class="space-y-6">
+            <div>
+              <label for="login-email" class="label block mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                id="login-email"
+                name="email"
+                required
+                class="input"
+                placeholder="Enter your email"
+              />
+            </div>
 
-          <div>
-            <label for="login-password" class="block text-sm font-medium text-gray-300 mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              id="login-password"
-              name="password"
-              required
-              class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
-              placeholder="Enter your password"
-            />
-          </div>
+            <div>
+              <label for="login-password" class="label block mb-2">
+                Password
+              </label>
+              <input
+                type="password"
+                id="login-password"
+                name="password"
+                required
+                class="input"
+                placeholder="Enter your password"
+              />
+            </div>
 
-          <div class="flex items-center justify-between">
-            <a href="#forgot-password" class="text-sm text-gray-400 hover:text-white transition-colors">
-              Forgot your password?
-            </a>
-          </div>
+            <div class="flex items-center justify-between">
+              <a href="#forgot-password" class="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Forgot your password?
+              </a>
+            </div>
 
-          <button
-            type="submit"
-            class="w-full bg-white text-black py-2 px-4 rounded-md font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-          >
-            <span class="button-text">Sign In</span>
-            <div class="spinner hidden ml-2"></div>
-          </button>
-        </form>
+            <button
+              type="submit"
+              class="btn btn-primary w-full"
+            >
+              <span class="button-text">🚀 Sign In</span>
+              <div class="spinner hidden ml-2"></div>
+            </button>
+          </form>
+        </div>
 
-        <div class="mt-6 text-center">
-          <p class="text-center text-gray-400">
+        <div class="card-footer">
+          <p class="text-center text-muted-foreground text-sm">
             Don't have an account?
             <button
               type="button"
               id="go-to-register"
-              class="text-white hover:underline font-medium ml-1"
+              class="text-foreground hover:underline font-medium ml-1"
             >
               Create one
             </button>
@@ -94,12 +99,6 @@ export class LoginForm extends BaseComponent {
       this.submitButton = this.element.querySelector(
         'button[type="submit"]'
       ) as HTMLButtonElement;
-
-      console.log("LoginForm elements:", {
-        emailInput: this.emailInput,
-        passwordInput: this.passwordInput,
-        submitButton: this.submitButton,
-      });
     }, 0);
   }
 
@@ -108,10 +107,8 @@ export class LoginForm extends BaseComponent {
       const form = this.element.querySelector("form") as HTMLFormElement;
       if (form) {
         form.addEventListener("submit", (e) => {
-          console.log("Form submit event triggered");
           this.handleSubmit(e);
         });
-        console.log("Form event listener added");
       } else {
         console.error("Form not found in LoginForm");
       }
@@ -122,12 +119,7 @@ export class LoginForm extends BaseComponent {
       if (forgotPasswordLink) {
         forgotPasswordLink.addEventListener("click", (e) => {
           e.preventDefault();
-          console.log("Forgot password link clicked");
-          window.dispatchEvent(
-            new CustomEvent("navigate", {
-              detail: { path: "/forgot-password" },
-            })
-          );
+          navigateToView(ViewType.FORGOT_PASSWORD);
         });
       }
 
@@ -137,7 +129,6 @@ export class LoginForm extends BaseComponent {
       if (registerLink) {
         registerLink.addEventListener("click", (e) => {
           e.preventDefault();
-          console.log("Register link clicked");
           navigateToView(ViewType.REGISTER);
         });
       }
@@ -146,28 +137,20 @@ export class LoginForm extends BaseComponent {
 
   private async handleSubmit(e: Event): Promise<void> {
     e.preventDefault();
-    console.log("handleSubmit called");
 
     if (this.isLoading) {
-      console.log("Already loading, returning");
       return;
     }
 
     if (!this.emailInput || !this.passwordInput) {
-      console.error("Form inputs not found");
       Toast.error("Form not ready, please try again");
       return;
     }
 
-    const formData: LoginData = {
+    const formData = {
       email: this.emailInput.value.trim(),
       password: this.passwordInput.value,
     };
-
-    console.log("Form data:", {
-      email: formData.email,
-      hasPassword: !!formData.password,
-    });
 
     if (!formData.email || !formData.password) {
       Toast.error("Please fill in all fields");
@@ -177,39 +160,105 @@ export class LoginForm extends BaseComponent {
     this.setLoading(true);
 
     try {
-      console.log("Attempting login...");
       const response = await authAPI.login(formData);
-      console.log("Login successful:", response);
 
-      authAPI.setAuth(response.accessToken, response.user);
+      if (response.requiresTwoFactor) {
+        sessionStorage.setItem("twoFactorUserId", response.userId.toString());
+        sessionStorage.setItem("twoFactorEmail", formData.email);
 
-      try {
-        const userResponse = await authAPI.getMe();
-        authAPI.setAuth(response.accessToken, userResponse.user);
-      } catch (error) {
-        console.error("Failed to refresh user data after login:", error);
+        Toast.info("Verification code sent to your email");
+
+        navigateToView(ViewType.TWO_FACTOR);
+      } else {
+        Toast.success("Login successful!");
+
+        if (this.onLoginSuccess) {
+          this.onLoginSuccess({
+            message: "Login successful",
+            accessToken: "",
+            user: {} as any,
+          });
+        }
       }
-
-      Toast.success("Login successful!");
-
-      if (this.onLoginSuccess) {
-        this.onLoginSuccess(response);
-      }
-
-      navigateToView(ViewType.DASHBOARD);
     } catch (error) {
-      console.error("Login failed:", error);
-      Toast.error(error instanceof Error ? error.message : "Login failed");
+      console.error("Login error:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Login failed";
+
+      if (errorMessage.includes("email not verified")) {
+        this.showEmailNotVerifiedError(formData.email);
+      } else {
+        Toast.error(errorMessage);
+      }
     } finally {
       this.setLoading(false);
     }
+  }
+
+  private showEmailNotVerifiedError(email: string): void {
+    const errorContainer = document.createElement("div");
+    errorContainer.className =
+      "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50";
+    errorContainer.innerHTML = `
+      <div class="bg-background border border-border rounded-lg p-6 max-w-md mx-4">
+        <div class="text-center">
+          <div class="text-4xl mb-4">📧</div>
+          <h3 class="text-xl font-bold text-foreground mb-2">Email Not Verified</h3>
+          <p class="text-muted-foreground mb-6">
+            Please verify your email address before logging in.
+            We can send you a new verification link.
+          </p>
+          <div class="space-y-3">
+            <button id="resend-verification" class="w-full btn btn-primary">
+              Send Verification Email
+            </button>
+            <button id="close-modal" class="w-full btn btn-secondary">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(errorContainer);
+
+    const resendBtn = errorContainer.querySelector(
+      "#resend-verification"
+    ) as HTMLButtonElement;
+    const closeBtn = errorContainer.querySelector(
+      "#close-modal"
+    ) as HTMLButtonElement;
+
+    resendBtn?.addEventListener("click", async () => {
+      resendBtn.disabled = true;
+      resendBtn.textContent = "Sending...";
+
+      try {
+        await authAPI.resendVerification({ email });
+        Toast.success("Verification email sent! Check your inbox.");
+        document.body.removeChild(errorContainer);
+      } catch (error: any) {
+        Toast.error(error.message || "Failed to send verification email");
+        resendBtn.disabled = false;
+        resendBtn.textContent = "Send Verification Email";
+      }
+    });
+
+    closeBtn?.addEventListener("click", () => {
+      document.body.removeChild(errorContainer);
+    });
+
+    errorContainer.addEventListener("click", (e) => {
+      if (e.target === errorContainer) {
+        document.body.removeChild(errorContainer);
+      }
+    });
   }
 
   private setLoading(loading: boolean): void {
     this.isLoading = loading;
 
     if (!this.submitButton) {
-      console.error("Submit button not found");
       return;
     }
 

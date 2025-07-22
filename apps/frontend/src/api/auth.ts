@@ -74,6 +74,17 @@ export interface ResendVerificationData {
   email: string;
 }
 
+export interface TwoFactorInitResponse {
+  message: string;
+  requiresTwoFactor: boolean;
+  userId: number;
+}
+
+export interface TwoFactorVerifyData {
+  userId: number;
+  code: string;
+}
+
 class AuthAPI {
   private async request<T>(
     endpoint: string,
@@ -119,8 +130,29 @@ class AuthAPI {
     });
   }
 
-  async login(userData: LoginData): Promise<AuthResponse> {
-    return await this.request<AuthResponse>("/auth/login", {
+  async login(userData: LoginData): Promise<TwoFactorInitResponse> {
+    return await this.request<TwoFactorInitResponse>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async verifyTwoFactor(userId: number, code: string): Promise<AuthResponse> {
+    const response = await this.request<AuthResponse>("/auth/login/verify", {
+      method: "POST",
+      body: JSON.stringify({ userId, code }),
+    });
+
+    localStorage.setItem("accessToken", response.accessToken);
+    localStorage.setItem("user", JSON.stringify(response.user));
+
+    return response;
+  }
+
+  async initTwoFactorLogin(
+    userData: LoginData
+  ): Promise<TwoFactorInitResponse> {
+    return await this.request<TwoFactorInitResponse>("/auth/login/init", {
       method: "POST",
       body: JSON.stringify(userData),
     });

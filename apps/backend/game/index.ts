@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import Fastify from "fastify";
 import { closeDatabase, initDatabase } from "./database/init.js";
 import { gameRoutes } from "./routes/gameRoutes.js";
+import { tournamentRoutes } from "./routes/tournamentRoutes.js";
 import { websocketRoutes } from "./routes/websocketRoutes.js";
 
 dotenv.config();
@@ -31,7 +32,7 @@ if (process.env.NODE_ENV === "development") {
         description: "Real-time Pong game microservice API documentation",
         version: "1.0.0",
       },
-      servers: [{ url: "http://localhost:3001" }],
+      servers: [{ url: "http://localhost:4000" }],
       components: {
         securitySchemes: {
           bearerAuth: {
@@ -103,10 +104,13 @@ async function start() {
     await fastify.register(gameRoutes);
     console.log("✅ Game routes registered");
 
+    await fastify.register(tournamentRoutes);
+    console.log("✅ Tournament routes registered");
+
     await fastify.register(websocketRoutes);
     console.log("✅ WebSocket routes registered");
 
-    const port = Number(process.env.PORT) || 3001;
+    const port = Number(process.env.PORT) || 4000;
     const host = process.env.HOST || "0.0.0.0";
 
     console.log(`🚀 Starting server on ${host}:${port}...`);

@@ -1,13 +1,13 @@
 import { VerifyEmailForm } from "../components/VerifyEmailForm";
 import { navigateToView, ViewType } from "../utils/navigation";
+import { waitForHashParam } from "../utils/urlParams";
 
 export async function createVerifyEmailPage(): Promise<HTMLElement> {
   const container = document.createElement("div");
   container.className =
     "min-h-screen flex items-center justify-center bg-black px-4";
 
-  const url = new URL(window.location.href);
-  const token = url.searchParams.get("token");
+  const token = await waitForHashParam("token", 20, 50);
 
   if (!token) {
     container.innerHTML = `

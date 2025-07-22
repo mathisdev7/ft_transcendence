@@ -19,43 +19,46 @@ export class ForgotPasswordForm extends BaseComponent {
 
   private renderForm(): void {
     this.element.innerHTML = `
-      <div class="bg-gray-900 border border-gray-800 rounded-lg p-8 shadow-lg">
-        <h2 class="text-2xl font-bold text-white mb-6 text-center">Reset Password</h2>
-
-        <div class="mb-6 text-center">
-          <p class="text-gray-400 text-sm">
+      <div class="card">
+        <div class="card-header text-center">
+          <h2 class="card-title">Reset Password</h2>
+          <p class="card-description">
             Enter your email address and we'll send you a link to reset your password.
           </p>
         </div>
 
-        <form class="space-y-6">
-          <div>
-            <label for="email" class="block text-sm font-medium text-gray-300 mb-2">
-              Email Address
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              required
-              class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
-              placeholder="Enter your email"
-            />
+        <div class="card-content">
+          <form class="space-y-6">
+            <div>
+              <label for="email" class="label block mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                required
+                class="input"
+                placeholder="Enter your email"
+              />
+            </div>
+
+            <button
+              type="submit"
+              class="btn btn-primary w-full"
+            >
+              <span class="button-text">📧 Send Reset Link</span>
+              <div class="spinner hidden ml-2"></div>
+            </button>
+          </form>
+        </div>
+
+        <div class="card-footer">
+          <div class="text-center">
+            <a href="#login" class="text-muted-foreground hover:text-foreground transition-colors text-sm">
+              Back to Sign In
+            </a>
           </div>
-
-          <button
-            type="submit"
-            class="w-full bg-white text-black py-2 px-4 rounded-md font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <span class="button-text">Send Reset Link</span>
-            <div class="spinner hidden"></div>
-          </button>
-        </form>
-
-        <div class="mt-6 text-center">
-          <a href="#login" class="text-gray-400 hover:text-white transition-colors">
-            Back to Sign In
-          </a>
         </div>
       </div>
     `;

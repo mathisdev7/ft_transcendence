@@ -1,4 +1,4 @@
-import { ViewType } from "../core/ViewManager";
+import { ViewType } from "../router/Router";
 
 export function navigateToView(view: ViewType): void {
   window.dispatchEvent(

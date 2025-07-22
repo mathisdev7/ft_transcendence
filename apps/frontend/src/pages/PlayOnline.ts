@@ -58,101 +58,90 @@ export class PlayOnlinePage extends BaseComponent {
   }
 
   protected init(): void {
-    console.log("PlayOnlinePage init() called");
-    console.log("All sessionStorage keys:", Object.keys(sessionStorage));
-    console.log("SessionStorage content:", sessionStorage);
-
     this.gameId = sessionStorage.getItem("currentGameId");
-    console.log("Game ID from sessionStorage:", this.gameId);
 
     if (!this.gameId) {
-      console.error("No game ID found in sessionStorage");
       Toast.error("No game ID found");
       this.goBackToMenu();
       return;
     }
 
-    console.log("Rendering page...");
     this.renderPage();
 
     setTimeout(() => {
-      console.log("Setting up canvas after DOM update...");
       this.setupCanvas();
-
-      console.log("Setting up event listeners...");
       this.setupEventListeners();
-
-      console.log("PlayOnlinePage initialization complete");
     }, 50);
   }
 
   private renderPage(): void {
     this.element.innerHTML = `
-      <div class="container mx-auto px-4 py-8">
+      <div class="container-responsive py-8">
         <div class="text-center mb-6">
-          <h1 class="text-3xl font-bold mb-4">Online Pong Game</h1>
+          <h1 class="text-3xl font-bold text-foreground mb-4">Online Pong Game</h1>
           <div id="connection-status" class="mb-4">
-            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-yellow-600">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-warning text-foreground">
               🔄 Connecting...
             </span>
           </div>
-          <div id="game-info" class="mb-4 text-gray-400">
+          <div id="game-info" class="mb-4 text-muted-foreground">
             Game ID: ${this.gameId?.substring(0, 8)}...
           </div>
         </div>
 
         <div class="flex justify-center mb-4">
           <div class="relative">
-            <canvas id="gameCanvas" class="border-2 border-white bg-black"></canvas>
+            <canvas id="gameCanvas" class="border-2 border-primary bg-black rounded-lg"></canvas>
 
-            <!-- Game overlay -->
-            <div id="game-overlay" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75">
+            <div id="game-overlay" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 rounded-lg">
               <div class="text-center">
-                <div id="waiting-message" class="text-xl font-bold mb-4">
+                <div id="waiting-message" class="text-xl font-bold mb-4 text-foreground">
                   Waiting for another player...
                 </div>
                 <div class="animate-pulse text-4xl">🎮</div>
               </div>
             </div>
 
-            <!-- Game ended overlay -->
-            <div id="game-ended-overlay" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-90 hidden">
-              <div class="text-center bg-gray-900 border border-gray-700 rounded-lg p-8">
-                <h2 class="text-2xl font-bold mb-4" id="winner-text"></h2>
-                <div id="final-score" class="text-lg mb-6"></div>
-                <div class="flex gap-4 justify-center">
-                  <button id="play-again-btn" class="bg-green-600 hover:bg-green-500 px-6 py-2 rounded-lg font-semibold">
-                    Back to Menu
-                  </button>
+            <div id="game-ended-overlay" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-90 hidden rounded-lg">
+              <div class="card text-center">
+                <div class="card-content">
+                  <h2 class="card-title mb-4" id="winner-text"></h2>
+                  <div id="final-score" class="text-lg mb-6 text-muted-foreground"></div>
+                  <div class="flex gap-4 justify-center">
+                    <button id="play-again-btn" class="btn btn-success">
+                      Back to Menu
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Players Info -->
         <div class="flex justify-center mb-4">
-          <div class="bg-gray-900 border border-gray-700 rounded-lg p-4 min-w-96">
-            <h3 class="text-center font-bold mb-3">Players</h3>
-            <div id="players-list" class="space-y-2">
-              <div class="text-center text-gray-500">Loading players...</div>
+          <div class="card min-w-96">
+            <div class="card-header">
+              <h3 class="card-title text-center">Players</h3>
+            </div>
+            <div class="card-content">
+              <div id="players-list" class="space-y-2">
+                <div class="text-center text-muted-foreground">Loading players...</div>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Controls -->
-        <div class="text-center text-sm text-gray-400 mb-4">
-          <p class="mb-2">Controls:</p>
+        <div class="text-center text-sm text-muted-foreground mb-4">
+          <p class="mb-2 font-medium">Controls:</p>
           <p id="controls-text">Use ↑/↓ arrow keys to move your paddle</p>
           <p>First to 11 points wins!</p>
         </div>
 
-        <!-- Action Buttons -->
         <div class="flex justify-center gap-4">
-          <button id="disconnect-btn" class="bg-red-600 hover:bg-red-500 px-6 py-2 rounded-lg font-semibold">
+          <button id="disconnect-btn" class="btn btn-destructive">
             Disconnect
           </button>
-          <button id="back-to-menu-btn" class="bg-gray-600 hover:bg-gray-500 px-6 py-2 rounded-lg font-semibold">
+          <button id="back-to-menu-btn" class="btn btn-secondary">
             Back to Menu
           </button>
         </div>
@@ -161,17 +150,11 @@ export class PlayOnlinePage extends BaseComponent {
   }
 
   private setupCanvas(): void {
-    console.log("Starting canvas setup...");
-
     this.canvas = this.element.querySelector(
       "#gameCanvas"
     ) as HTMLCanvasElement;
 
-    console.log("Canvas element found:", !!this.canvas);
-    console.log("Canvas element:", this.canvas);
-
     if (!this.canvas) {
-      console.error("Game canvas not found in DOM");
       Toast.error("Failed to initialize game canvas");
       this.goBackToMenu();
       return;
@@ -179,18 +162,10 @@ export class PlayOnlinePage extends BaseComponent {
 
     this.canvas.width = this.CANVAS_WIDTH;
     this.canvas.height = this.CANVAS_HEIGHT;
-    console.log(
-      "Canvas dimensions set:",
-      this.canvas.width,
-      "x",
-      this.canvas.height
-    );
 
     const context = this.canvas.getContext("2d");
-    console.log("2D context obtained:", !!context);
 
     if (!context) {
-      console.error("Failed to get 2D context from canvas");
       Toast.error("Your browser doesn't support canvas 2D context");
       this.goBackToMenu();
       return;
@@ -199,52 +174,27 @@ export class PlayOnlinePage extends BaseComponent {
     this.ctx = context;
     this.ctx.fillStyle = "white";
     this.ctx.font = "24px Arial";
-    console.log("Canvas context configured successfully");
 
     setTimeout(() => {
-      console.log("Timeout callback - verifying canvas state...");
-      console.log("Canvas still available:", !!this.canvas);
-      console.log("Context still available:", !!this.ctx);
-
       if (!this.canvas || !this.ctx) {
-        console.error("Canvas or context not available after initialization");
-        console.error("Canvas:", this.canvas);
-        console.error("Context:", this.ctx);
         Toast.error("Failed to initialize game canvas");
         this.goBackToMenu();
         return;
       }
 
       this.canvasReady = true;
-      console.log("Canvas initialized successfully");
 
       this.drawInitialState();
 
       if (this.pendingGameState) {
-        console.log(
-          "Processing pending game state after canvas initialization"
-        );
         this.gameState = this.pendingGameState;
         this.pendingGameState = null;
         this.drawGame();
       }
 
-      console.log("About to check gameId for connection:", this.gameId);
-      console.log(
-        "SessionStorage at timeout:",
-        sessionStorage.getItem("currentGameId")
-      );
-      console.log(
-        "Re-reading gameId from sessionStorage:",
-        sessionStorage.getItem("currentGameId")
-      );
       this.gameId = sessionStorage.getItem("currentGameId");
-      console.log("GameId after re-reading:", this.gameId);
       if (this.gameId) {
-        console.log("Calling connectToGame...");
         this.connectToGame();
-      } else {
-        console.error("No gameId available for connection!");
       }
     }, 100);
   }
@@ -269,14 +219,7 @@ export class PlayOnlinePage extends BaseComponent {
   }
 
   private async connectToGame(): Promise<void> {
-    console.log("connectToGame() called with gameId:", this.gameId);
-    console.log("Authentication status:", authAPI.isAuthenticated());
-
     if (!this.gameId || !authAPI.isAuthenticated()) {
-      console.error("Missing gameId or not authenticated:", {
-        gameId: this.gameId,
-        authenticated: authAPI.isAuthenticated(),
-      });
       Toast.error("Authentication required");
       this.goBackToMenu();
       return;
@@ -284,7 +227,6 @@ export class PlayOnlinePage extends BaseComponent {
 
     try {
       this.updateConnectionStatus("connecting", "Connecting to game...");
-      console.log(`Attempting to connect to game: ${this.gameId}`);
 
       this.websocket = gameAPI.connectToGame(
         this.gameId,
@@ -292,13 +234,7 @@ export class PlayOnlinePage extends BaseComponent {
         (error) => this.handleWebSocketError(error),
         (event) => this.handleWebSocketClose(event)
       );
-
-      console.log(
-        "WebSocket connection initiated:",
-        this.websocket?.readyState
-      );
     } catch (error: any) {
-      console.error("Failed to connect to game:", error);
       this.updateConnectionStatus("error", "Connection failed");
       Toast.error(error.message || "Failed to connect to game");
 
@@ -340,7 +276,8 @@ export class PlayOnlinePage extends BaseComponent {
         this.handleGameResumed(data);
         break;
       default:
-        console.log("Unknown message type:", data.type);
+        Toast.error("Unknown message type: " + data.type);
+        break;
     }
   }
 
@@ -377,19 +314,14 @@ export class PlayOnlinePage extends BaseComponent {
     if (this.canDraw()) {
       this.drawGame();
     } else {
-      console.log(
-        "Game state received but cannot draw yet, storing for later rendering"
-      );
       this.pendingGameState = data.state;
     }
   }
 
   private handleGoalScored(data: any): void {
-    console.log("Frontend received goal_scored message:", data);
     if (this.isDestroyed) return;
 
     this.gameState = data.gameState;
-    console.log("Updated game state after goal:", this.gameState);
 
     if (this.canDraw()) {
       this.drawGame();
@@ -398,7 +330,6 @@ export class PlayOnlinePage extends BaseComponent {
     const scorerName =
       this.players.find((p) => p.playerNumber === data.scorer)?.username ||
       `Player ${data.scorer}`;
-    console.log("Showing toast for goal scored by:", scorerName);
     Toast.success(`Goal scored by ${scorerName}!`);
   }
 
@@ -437,15 +368,11 @@ export class PlayOnlinePage extends BaseComponent {
   }
 
   private handleWebSocketError(error: Event): void {
-    console.error("WebSocket error:", error);
-    console.error("WebSocket state:", this.websocket?.readyState);
     this.updateConnectionStatus("error", "Connection error");
   }
 
   private handleWebSocketClose(event: CloseEvent): void {
     this.isConnected = false;
-    console.log("WebSocket closed:", event.code, event.reason);
-    console.log("Was clean close:", event.wasClean);
     this.updateConnectionStatus("disconnected", "Disconnected");
 
     if (event.code !== 1000 && this.connectionRetries < this.maxRetries) {
@@ -642,29 +569,22 @@ export class PlayOnlinePage extends BaseComponent {
 
   private canDraw(): boolean {
     if (this.isDestroyed) {
-      console.log("Cannot draw: component destroyed");
       return false;
     }
 
     if (!this.canvasReady) {
-      console.log(
-        "Cannot draw: canvas not ready yet, waiting for initialization..."
-      );
       return false;
     }
 
     if (!this.canvas) {
-      console.log("Cannot draw: canvas element not found");
       return false;
     }
 
     if (!this.ctx) {
-      console.log("Cannot draw: no canvas context available");
       return false;
     }
 
     if (!this.canvas.parentElement) {
-      console.log("Cannot draw: canvas not attached to DOM");
       return false;
     }
 
@@ -673,7 +593,6 @@ export class PlayOnlinePage extends BaseComponent {
 
   private drawInitialState(): void {
     if (!this.ctx || this.isDestroyed) {
-      console.warn("Canvas context not available for initial draw");
       return;
     }
 
@@ -710,22 +629,17 @@ export class PlayOnlinePage extends BaseComponent {
       this.ctx.textAlign = "center";
       this.ctx.fillText("0", this.CANVAS_WIDTH / 4, 50);
       this.ctx.fillText("0", (3 * this.CANVAS_WIDTH) / 4, 50);
-
-      console.log("Initial game state drawn");
     } catch (error) {
-      console.error("Error drawing initial state:", error);
       Toast.error("Failed to initialize game display");
     }
   }
 
   private drawGame(): void {
     if (!this.canDraw()) {
-      console.warn("Cannot draw game: canvas not ready");
       return;
     }
 
     if (!this.gameState) {
-      console.warn("Cannot draw game: no game state");
       return;
     }
 
@@ -779,7 +693,6 @@ export class PlayOnlinePage extends BaseComponent {
         );
       }
     } catch (error) {
-      console.error("Error drawing game:", error);
       Toast.error("Rendering error occurred");
     }
   }
@@ -806,8 +719,6 @@ export class PlayOnlinePage extends BaseComponent {
 
   public destroy(): void {
     if (this.isDestroyed) return;
-
-    console.log("Destroying PlayOnline page...");
 
     this.isDestroyed = true;
 

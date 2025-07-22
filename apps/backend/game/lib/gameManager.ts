@@ -118,9 +118,6 @@ export class GameManager {
 
       if (gameSession.players.size === 2) {
         if (gameSession.game.getState().isPaused) {
-          console.log(
-            `🎮 Game ${gameSession.id} was paused, resuming (status: ${gameSession.status})`
-          );
           gameSession.game.resume();
           this.broadcastToGame(gameSession, {
             type: "game_resumed",
@@ -134,9 +131,6 @@ export class GameManager {
           gameSession.players.size === 2 &&
           gameSession.game.getState().isPaused
         ) {
-          console.log(
-            `🎮 Resuming game ${gameSession.id} - reconnection with 2 players`
-          );
           gameSession.game.resume();
           this.broadcastToGame(gameSession, {
             type: "game_resumed",
@@ -146,7 +140,6 @@ export class GameManager {
       }
 
       if (gameSession.status === "waiting" && gameSession.players.size === 2) {
-        console.log(`🎮 Starting game ${gameSession.id} - 2 players joined`);
         this.startGame(gameSession);
       }
 
@@ -271,15 +264,8 @@ export class GameManager {
     player: PlayerConnection
   ): void {
     if (!gameSession.players.has(player.userId)) {
-      console.log(
-        `🎮 Player ${player.username} already disconnected from game ${gameSession.id}`
-      );
       return;
     }
-
-    console.log(
-      `🎮 Player ${player.username} disconnecting from game ${gameSession.id} (status: ${gameSession.status})`
-    );
 
     try {
       const stmt = db.prepare(`
@@ -303,20 +289,12 @@ export class GameManager {
     if (gameSession.status === "active") {
       if (!gameSession.game.getState().isPaused) {
         gameSession.game.pause();
-        console.log(
-          `🎮 Game ${gameSession.id} paused due to player disconnection`
-        );
-      } else {
-        console.log(`🎮 Game ${gameSession.id} was already paused`);
       }
 
       if (gameSession.players.size < 2) {
         gameSession.status = "waiting";
 
         if (gameSession.game.getState().isPaused) {
-          console.log(
-            `🎮 Resuming game ${gameSession.id} before returning to waiting state`
-          );
           gameSession.game.resume();
         }
 
@@ -346,9 +324,6 @@ export class GameManager {
     gameSession.startedAt = new Date();
 
     if (gameSession.game.getState().isPaused) {
-      console.log(
-        `🎮 Game ${gameSession.id} was paused, resuming before start`
-      );
       gameSession.game.resume();
     }
 
@@ -371,9 +346,6 @@ export class GameManager {
       })),
     });
 
-    console.log(
-      `🎮 Game ${gameSession.id} started with ${gameSession.players.size} players`
-    );
     this.startGameLoop(gameSession);
   }
 
@@ -382,18 +354,15 @@ export class GameManager {
       const updateResult = gameSession.game.update();
 
       if (updateResult.scored) {
-        console.log("Game loop detected goal! Scorer:", updateResult.scored);
         const goalMessage = {
           type: "goal_scored",
           scorer: updateResult.scored,
           gameState: gameSession.game.getState(),
         };
-        console.log("Broadcasting goal message:", goalMessage);
         this.broadcastToGame(gameSession, goalMessage);
       }
 
       if (updateResult.gameEnded) {
-        console.log("Game ended!");
         this.endGame(gameSession);
         return;
       }
@@ -543,6 +512,10 @@ export class GameManager {
       return true;
     }
     return false;
+  }
+
+  public deleteGame(gameId: string): void {
+    this.games.delete(gameId);
   }
 }
 

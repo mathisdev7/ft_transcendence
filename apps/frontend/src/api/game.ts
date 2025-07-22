@@ -67,12 +67,10 @@ export interface GameHistoryResponse {
 
 class GameAPI {
   private baseURL =
-    import.meta.env.VITE_API_GAME_URL || "http://localhost:3001";
+    import.meta.env.VITE_API_GAME_URL || "http://localhost:4000";
   private wsConnections: Map<string, WebSocket> = new Map();
 
-  constructor() {
-    console.log("GameAPI initialized with baseURL:", this.baseURL);
-  }
+  constructor() {}
 
   private async fetchWithAuth(endpoint: string, options: RequestInit = {}) {
     const token = localStorage.getItem("accessToken");
@@ -159,15 +157,7 @@ class GameAPI {
     const wsURL = `${wsBaseURL}/ws/game/${gameId}?token=${encodeURIComponent(
       token
     )}`;
-    console.log("Connecting to WebSocket URL:", wsURL);
     const ws = new WebSocket(wsURL);
-
-    ws.onopen = () => {
-      console.log(
-        `WebSocket opened for game ${gameId}, readyState:`,
-        ws.readyState
-      );
-    };
 
     ws.onmessage = (event) => {
       try {
@@ -185,11 +175,6 @@ class GameAPI {
     };
 
     ws.onclose = (event) => {
-      console.log(`WebSocket closed for game ${gameId}:`, {
-        code: event.code,
-        reason: event.reason,
-        wasClean: event.wasClean,
-      });
       this.wsConnections.delete(gameId);
       onClose(event);
     };
@@ -223,7 +208,32 @@ class GameAPI {
   }
 
   async createLocalGame(userId: number): Promise<{ matchId: string }> {
-    return this.createGame().then((result) => ({ matchId: result.gameId }));
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      throw new Error("No access token found");
+    }
+
+    try {
+      const response = await fetch(`${this.baseURL}/game/local`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ maxScore: 11 }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to create local game");
+      }
+
+      const data = await response.json();
+      return { matchId: data.matchId };
+    } catch (error) {
+      console.error("Failed to create local game:", error);
+      throw error;
+    }
   }
 
   async updateGameResult(data: {
@@ -233,7 +243,29 @@ class GameAPI {
     duration: number;
     winnerId?: number;
   }): Promise<void> {
-    console.log("Game result would be saved:", data);
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      throw new Error("No access token found");
+    }
+
+    try {
+      const response = await fetch(`${this.baseURL}/game/local/result`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update game result");
+      }
+    } catch (error) {
+      console.error("Failed to update game result:", error);
+      throw error;
+    }
   }
 }
 

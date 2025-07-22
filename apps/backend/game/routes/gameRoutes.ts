@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { db } from "../database/init.js";
@@ -309,6 +310,15 @@ export async function gameRoutes(fastify: FastifyInstance) {
           })
           .filter(Boolean);
 
+        for (const game of games) {
+          if (
+            game?.createdAt &&
+            new Date(game.createdAt) < new Date(Date.now() - 1000 * 60 * 5)
+          ) {
+            gameManager.deleteGame(game.gameId);
+          }
+        }
+
         reply.send({ games });
       } catch (error: any) {
         fastify.log.error("Failed to get waiting games:", error);
@@ -400,6 +410,198 @@ export async function gameRoutes(fastify: FastifyInstance) {
       } catch (error: any) {
         fastify.log.error("Failed to execute game control:", error);
         reply.status(500).send({ error: "failed to execute command" });
+      }
+    }
+  );
+
+  fastify.post(
+    "/game/local",
+    {
+      schema: {
+        tags: ["Game"],
+        summary: "Create a new local Pong game",
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: "object",
+          properties: {
+            maxScore: {
+              type: "number",
+              minimum: 1,
+              maximum: 21,
+              default: 11,
+              description: "Maximum score to win the game",
+            },
+          },
+        },
+        response: {
+          201: {
+            description: "Local game created successfully",
+            type: "object",
+            properties: {
+              message: { type: "string" },
+              matchId: { type: "string" },
+              status: { type: "string" },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            ...errorSchema,
+          },
+          500: {
+            description: "Internal server error",
+            ...errorSchema,
+          },
+        },
+      },
+      ...requireAuth(),
+    },
+    async (request, reply) => {
+      try {
+        const user = (request as any).gameUser as JwtPayload;
+        const validation = createGameSchema.safeParse(request.body);
+
+        if (!validation.success) {
+          return reply.status(400).send({
+            error: validation.error.issues[0].message,
+          });
+        }
+
+        const gameId = crypto.randomUUID();
+
+        db.prepare(
+          `
+          INSERT INTO games (
+            id, status, player1_id, max_score, created_at
+          ) VALUES (?, ?, ?, ?, ?)
+        `
+        ).run(
+          gameId,
+          "local",
+          user.userId,
+          validation.data.maxScore,
+          new Date().toISOString()
+        );
+
+        reply.status(201).send({
+          message: "local game created successfully",
+          matchId: gameId,
+          status: "local",
+        });
+      } catch (error: any) {
+        fastify.log.error("Failed to create local game:", error);
+        reply.status(500).send({ error: "failed to create local game" });
+      }
+    }
+  );
+
+  fastify.post(
+    "/game/local/result",
+    {
+      schema: {
+        tags: ["Game"],
+        summary: "Update local game result",
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: "object",
+          required: ["matchId", "player1Score", "player2Score", "duration"],
+          properties: {
+            matchId: {
+              type: "string",
+              format: "uuid",
+              description: "Local game match ID",
+            },
+            player1Score: {
+              type: "number",
+              minimum: 0,
+              description: "Player 1 final score",
+            },
+            player2Score: {
+              type: "number",
+              minimum: 0,
+              description: "Player 2 final score",
+            },
+            duration: {
+              type: "number",
+              minimum: 0,
+              description: "Game duration in seconds",
+            },
+            winnerId: {
+              type: "number",
+              description: "Winner user ID (optional)",
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "Local game result updated successfully",
+            type: "object",
+            properties: {
+              message: { type: "string" },
+            },
+          },
+          404: {
+            description: "Game not found",
+            ...errorSchema,
+          },
+          500: {
+            description: "Internal server error",
+            ...errorSchema,
+          },
+        },
+      },
+      ...requireAuth(),
+    },
+    async (request, reply) => {
+      try {
+        const user = (request as any).gameUser as JwtPayload;
+        const { matchId, player1Score, player2Score, duration, winnerId } =
+          request.body as {
+            matchId: string;
+            player1Score: number;
+            player2Score: number;
+            duration: number;
+            winnerId?: number;
+          };
+
+        const game = db
+          .prepare(
+            `
+          SELECT id, player1_id, status FROM games
+          WHERE id = ? AND status = 'local' AND player1_id = ?
+        `
+          )
+          .get(matchId, user.userId) as any;
+
+        if (!game) {
+          return reply.status(404).send({ error: "local game not found" });
+        }
+
+        db.prepare(
+          `
+          UPDATE games SET
+            status = 'finished',
+            player1_score = ?,
+            player2_score = ?,
+            winner_id = ?,
+            game_duration = ?,
+            finished_at = ?
+          WHERE id = ?
+        `
+        ).run(
+          player1Score,
+          player2Score,
+          winnerId || null,
+          duration,
+          new Date().toISOString(),
+          matchId
+        );
+
+        reply.send({
+          message: "local game result updated successfully",
+        });
+      } catch (error: any) {
+        fastify.log.error("Failed to update local game result:", error);
+        reply.status(500).send({ error: "failed to update local game result" });
       }
     }
   );

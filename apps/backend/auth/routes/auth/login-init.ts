@@ -1,23 +1,21 @@
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { sendTwoFactorCode } from "../../database/lib/emailService.ts";
-import { loginUser } from "../../database/lib/loginUser.ts";
-import { createTwoFactorCode } from "../../database/lib/twoFactorService.ts";
+import { sendTwoFactorCode } from "../../database/lib/emailService";
+import { loginUser } from "../../database/lib/loginUser";
+import { createTwoFactorCode } from "../../database/lib/twoFactorService";
 
-const loginBodySchema = z.object({
+const loginInitBodySchema = z.object({
   email: z.string().email("invalid email format"),
   password: z.string().min(1, "password is required"),
 });
 
-export async function loginRoute(fastify: FastifyInstance) {
+export async function loginInitRoute(fastify: FastifyInstance) {
   fastify.post(
-    "/auth/login",
+    "/auth/login/init",
     {
       schema: {
         tags: ["Authentication"],
-        summary: "Login user (redirects to 2FA flow)",
-        description:
-          "This endpoint now initiates 2FA login flow. Use /auth/login/init and /auth/login/verify for new implementations.",
+        summary: "Initiate login and send 2FA code",
         body: {
           type: "object",
           required: ["email", "password"],
@@ -32,7 +30,7 @@ export async function loginRoute(fastify: FastifyInstance) {
         },
         response: {
           200: {
-            description: "2FA code sent - login requires verification",
+            description: "2FA code sent successfully",
             content: {
               "application/json": {
                 schema: {
@@ -59,12 +57,25 @@ export async function loginRoute(fastify: FastifyInstance) {
               },
             },
           },
+          429: {
+            description: "Too many requests",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    error: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
         },
       },
     },
     async (request, reply) => {
       try {
-        const validation = loginBodySchema.safeParse(request.body);
+        const validation = loginInitBodySchema.safeParse(request.body);
 
         if (!validation.success) {
           return reply.status(400).send({
@@ -89,8 +100,7 @@ export async function loginRoute(fastify: FastifyInstance) {
         );
 
         reply.send({
-          message:
-            "verification code sent to your email. use /auth/login/verify to complete login",
+          message: "verification code sent to your email",
           requiresTwoFactor: true,
           userId: user.id,
         });

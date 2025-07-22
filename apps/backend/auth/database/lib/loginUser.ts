@@ -22,6 +22,10 @@ export const loginUser = async (email: string, password: string) => {
     throw new Error("invalid credentials");
   }
 
+  if (!user.is_verified) {
+    throw new Error("email not verified");
+  }
+
   const isPasswordValid = await bcrypt.compare(password, user.password_hash);
 
   if (!isPasswordValid) {

@@ -55,9 +55,6 @@ if (process.env.NODE_ENV === "development") {
 
 fastify.register(import("@fastify/jwt"), {
   secret: process.env.JWT_SECRET,
-  sign: {
-    expiresIn: "5h",
-  },
 });
 
 fastify.register(import("@fastify/cookie"), {

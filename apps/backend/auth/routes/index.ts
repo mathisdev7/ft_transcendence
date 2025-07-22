@@ -2,6 +2,8 @@ import { FastifyInstance } from "fastify";
 
 import { changePasswordRoute } from "./auth/change-password.ts";
 import { forgotPasswordRoute } from "./auth/forgot-password.ts";
+import { loginInitRoute } from "./auth/login-init.ts";
+import { loginVerifyRoute } from "./auth/login-verify.ts";
 import { loginRoute } from "./auth/login.ts";
 import { logoutRoute } from "./auth/logout.ts";
 import { meRoute } from "./auth/me.ts";
@@ -16,6 +18,8 @@ import { healthRoute } from "./health/health.ts";
 export async function registerAllRoutes(fastify: FastifyInstance) {
   await fastify.register(registerRoute);
   await fastify.register(loginRoute);
+  await fastify.register(loginInitRoute);
+  await fastify.register(loginVerifyRoute);
   await fastify.register(logoutRoute);
   await fastify.register(refreshRoute);
   await fastify.register(meRoute);
