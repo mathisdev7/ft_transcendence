@@ -2,4 +2,4 @@ import { App } from "./app";
 import "./style.css";
 
 const app = new App();
-app.start().catch(console.error);
+app.start();

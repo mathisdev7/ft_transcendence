@@ -231,7 +231,7 @@ export async function gameRoutes(fastify: FastifyInstance) {
         const gameState = game.game.getState();
         const players = Array.from(game.players.values()).map((p) => ({
           playerNumber: p.playerNumber,
-          username: p.username,
+          displayName: p.displayName,
           connected: p.connected,
         }));
 
@@ -728,6 +728,196 @@ export async function gameRoutes(fastify: FastifyInstance) {
       } catch (error: any) {
         fastify.log.error("Failed to get game history:", error);
         reply.status(500).send({ error: "failed to get game history" });
+      }
+    }
+  );
+
+  fastify.get(
+    "/user/history",
+    {
+      schema: {
+        tags: ["Game"],
+        summary: "Get user game history and statistics",
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: {
+            description: "User game history retrieved successfully",
+            type: "object",
+            properties: {
+              stats: {
+                type: "object",
+                properties: {
+                  total_games: { type: "number" },
+                  games_won: { type: "number" },
+                  games_lost: { type: "number" },
+                  win_rate: { type: "number" },
+                },
+              },
+              games: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string" },
+                    status: { type: "string" },
+                    player1_score: { type: "number" },
+                    player2_score: { type: "number" },
+                    winner_id: { type: "number" },
+                    game_duration: { type: "number" },
+                    finished_at: { type: "string" },
+                    opponent_id: { type: "number" },
+                    is_winner: { type: "boolean" },
+                  },
+                },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            ...errorSchema,
+          },
+        },
+      },
+      ...requireAuth(),
+    },
+    async (request, reply) => {
+      try {
+        const user = (request as any).gameUser as JwtPayload;
+        const userId = user.userId;
+
+        const gamesQuery = db.prepare(`
+          SELECT
+            id, status, player1_id, player2_id, player1_score, player2_score,
+            winner_id, game_duration, finished_at, created_at
+          FROM games
+          WHERE (player1_id = ? OR player2_id = ?)
+            AND status = 'finished'
+          ORDER BY finished_at DESC
+          LIMIT 50
+        `);
+
+        const games = gamesQuery.all(userId, userId) as any[];
+
+        const stats = {
+          total_games: games.length,
+          games_won: games.filter((g) => g.winner_id === userId).length,
+          games_lost: games.filter(
+            (g) => g.winner_id !== userId && g.winner_id !== null
+          ).length,
+          win_rate:
+            games.length > 0
+              ? Math.round(
+                  (games.filter((g) => g.winner_id === userId).length /
+                    games.length) *
+                    100
+                )
+              : 0,
+        };
+
+        const gameHistory = games.map((game) => ({
+          id: game.id,
+          status: game.status,
+          player1_score: game.player1_score,
+          player2_score: game.player2_score,
+          winner_id: game.winner_id,
+          game_duration: game.game_duration,
+          finished_at: game.finished_at,
+          opponent_id:
+            game.player1_id === userId ? game.player2_id : game.player1_id,
+          is_winner: game.winner_id === userId,
+        }));
+
+        reply.send({
+          stats,
+          games: gameHistory,
+        });
+      } catch (error: any) {
+        fastify.log.error("Failed to get user game history:", error);
+        reply.status(500).send({ error: "failed to get game history" });
+      }
+    }
+  );
+
+  fastify.get(
+    "/user/:userId/history",
+    {
+      schema: {
+        tags: ["Game"],
+        summary: "Get specific user game statistics",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          required: ["userId"],
+          properties: {
+            userId: {
+              type: "string",
+              description: "User ID",
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "User game statistics retrieved successfully",
+            type: "object",
+            properties: {
+              stats: {
+                type: "object",
+                properties: {
+                  total_games: { type: "number" },
+                  games_won: { type: "number" },
+                  games_lost: { type: "number" },
+                  win_rate: { type: "number" },
+                },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            ...errorSchema,
+          },
+        },
+      },
+      ...requireAuth(),
+    },
+    async (request, reply) => {
+      try {
+        const { userId } = request.params as { userId: string };
+        const userIdNum = parseInt(userId, 10);
+
+        if (isNaN(userIdNum)) {
+          return reply.status(400).send({ error: "invalid user id" });
+        }
+
+        const gamesQuery = db.prepare(`
+          SELECT
+            id, status, player1_id, player2_id, winner_id
+          FROM games
+          WHERE (player1_id = ? OR player2_id = ?)
+            AND status = 'finished'
+        `);
+
+        const games = gamesQuery.all(userIdNum, userIdNum) as any[];
+
+        const stats = {
+          total_games: games.length,
+          games_won: games.filter((g) => g.winner_id === userIdNum).length,
+          games_lost: games.filter(
+            (g) => g.winner_id !== userIdNum && g.winner_id !== null
+          ).length,
+          win_rate:
+            games.length > 0
+              ? Math.round(
+                  (games.filter((g) => g.winner_id === userIdNum).length /
+                    games.length) *
+                    100
+                )
+              : 0,
+        };
+
+        reply.send({ stats });
+      } catch (error: any) {
+        fastify.log.error("Failed to get user game statistics:", error);
+        reply.status(500).send({ error: "failed to get game statistics" });
       }
     }
   );

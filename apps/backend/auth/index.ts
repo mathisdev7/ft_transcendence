@@ -21,6 +21,13 @@ fastify.register(import("@fastify/cors"), {
     "https://www.pongenmoinsbien.xyz",
   ],
   credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept",
+  ],
 });
 
 if (process.env.NODE_ENV === "development") {
@@ -62,6 +69,9 @@ fastify.register(import("@fastify/cookie"), {
 });
 
 initDatabase();
+
+console.log("🔧 Registering WebSocket support...");
+fastify.register(import("@fastify/websocket"));
 
 console.log("🔧 Registering routes...");
 fastify.register(registerAllRoutes);

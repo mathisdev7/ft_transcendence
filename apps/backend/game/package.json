@@ -5,8 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "tsx index.ts",
-    "dev": "tsx test-server.ts",
-    "test": "tsx test-server.ts"
+    "dev": "tsx index.ts"
   },
   "keywords": [
     "pong",

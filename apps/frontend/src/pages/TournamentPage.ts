@@ -570,7 +570,7 @@ export class TournamentPage extends BaseComponent {
       if (currentUser) {
         players.push({
           id: currentUser.id.toString(),
-          name: currentUser.display_name || currentUser.username,
+          name: currentUser.display_name,
           isCurrentUser: true,
         });
       }

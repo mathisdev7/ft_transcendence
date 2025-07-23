@@ -17,6 +17,7 @@
     "@fastify/jwt": "^9.1.0",
     "@fastify/swagger": "^9.5.1",
     "@fastify/swagger-ui": "^5.2.3",
+    "@fastify/websocket": "^11.2.0",
     "@jest/globals": "^30.0.3",
     "bcrypt": "^6.0.0",
     "better-sqlite3": "^12.1.1",

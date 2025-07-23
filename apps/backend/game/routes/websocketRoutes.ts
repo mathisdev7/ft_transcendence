@@ -49,7 +49,7 @@ export async function websocketRoutes(fastify: FastifyInstance) {
           }
 
           fastify.log.info(
-            `Player ${user.username} connected to game ${gameId}`
+            `Player ${user.displayName} connected to game ${gameId}`
           );
         } catch (error) {
           fastify.log.error("WebSocket connection error:", error);

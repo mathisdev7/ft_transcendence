@@ -22,7 +22,6 @@ export async function meRoute(fastify: FastifyInstance) {
                       properties: {
                         id: { type: "number" },
                         email: { type: "string" },
-                        username: { type: "string" },
                         display_name: { type: "string" },
                         avatar_url: { type: "string" },
                         is_verified: { type: "boolean" },

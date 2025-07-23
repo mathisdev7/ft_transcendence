@@ -3,6 +3,7 @@ import swaggerUI from "@fastify/swagger-ui";
 import dotenv from "dotenv";
 import Fastify from "fastify";
 import { closeDatabase, initDatabase } from "./database/init.js";
+import { activityRoutes } from "./routes/activity.js";
 import { gameRoutes } from "./routes/gameRoutes.js";
 import { tournamentRoutes } from "./routes/tournamentRoutes.js";
 import { websocketRoutes } from "./routes/websocketRoutes.js";
@@ -113,6 +114,9 @@ async function start() {
 
     await fastify.register(websocketRoutes);
     console.log("✅ WebSocket routes registered");
+
+    await fastify.register(activityRoutes);
+    console.log("✅ Activity routes registered");
 
     const port = Number(process.env.PORT) || 4000;
     const host = process.env.HOST || "0.0.0.0";

@@ -5,6 +5,8 @@ import { createLoginPage } from "./pages/LoginPage";
 import { createLocalGamePage } from "./pages/PlayLocal";
 import { createPlayMenuPage } from "./pages/PlayMenu";
 import { createOnlineGamePage } from "./pages/PlayOnline";
+import { createProfileEditPage } from "./pages/ProfileEditPage";
+import { createProfileViewPage } from "./pages/ProfileViewPage";
 import { createRegisterPage } from "./pages/RegisterPage";
 import { createResetPasswordPage } from "./pages/ResetPasswordPage";
 import { createTournamentGamePage } from "./pages/TournamentGame";
@@ -107,12 +109,24 @@ export class App {
         type: ViewType.TOURNAMENT_GAME,
         component: createTournamentGamePage,
         requiresAuth: false,
-        title: "Tournament Match",
+        title: "Tournament Game",
+      },
+      {
+        type: ViewType.PROFILE_VIEW,
+        component: createProfileViewPage,
+        requiresAuth: true,
+        title: "User Profile",
+      },
+      {
+        type: ViewType.PROFILE_EDIT,
+        component: createProfileEditPage,
+        requiresAuth: true,
+        title: "Edit Profile",
       },
     ]);
   }
 
-  public async start(): Promise<void> {
-    await this.router.start();
+  public start(): void {
+    this.router.start();
   }
 }

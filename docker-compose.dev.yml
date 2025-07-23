@@ -20,7 +20,7 @@ services:
     networks:
       - transcendence-dev-network
     restart: unless-stopped
-    command: ["pnpm", "dev"]
+    command: ["npm", "run", "dev"]
 
   game-backend:
     build:
@@ -41,7 +41,7 @@ services:
     networks:
       - transcendence-dev-network
     restart: unless-stopped
-    command: ["pnpm", "dev"]
+    command: ["npm", "run", "dev"]
     depends_on:
       - auth-backend
 

@@ -23,7 +23,6 @@ export async function refreshRoute(fastify: FastifyInstance) {
                       properties: {
                         id: { type: "number" },
                         email: { type: "string" },
-                        username: { type: "string" },
                         display_name: { type: "string" },
                         avatar_url: { type: "string" },
                         is_verified: { type: "boolean" },
@@ -66,9 +65,9 @@ export async function refreshRoute(fastify: FastifyInstance) {
           {
             userId: session.user.id,
             email: session.user.email,
-            username: session.user.username,
+            displayName: session.user.display_name,
           },
-          { expiresIn: "15m" }
+          { expiresIn: "7d" }
         );
 
         (reply as any).setCookie("refreshToken", session.refreshToken, {

@@ -3,7 +3,7 @@ import { FastifyReply, FastifyRequest } from "fastify";
 export interface JwtPayload {
   userId: number;
   email: string;
-  username: string;
+  displayName: string;
   iat?: number;
   exp?: number;
 }
