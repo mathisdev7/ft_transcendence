@@ -33,7 +33,7 @@ export const loginUser = async (email: string, password: string) => {
     (error as any).user = {
       id: user.id,
       email: user.email,
-      username: user.username,
+      display_name: user.display_name,
     };
     throw error;
   }
@@ -45,7 +45,6 @@ export const loginUser = async (email: string, password: string) => {
   return {
     id: user.id,
     email: user.email,
-    username: user.username,
     display_name: user.display_name,
     avatar_url: user.avatar_url,
     is_verified: user.is_verified,

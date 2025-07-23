@@ -14,7 +14,6 @@ export interface LoginData {
 export interface User {
   id: number;
   email: string;
-  username: string;
   display_name: string;
   avatar_url: string;
   is_verified: boolean;

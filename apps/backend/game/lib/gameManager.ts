@@ -8,7 +8,7 @@ export interface PlayerConnection {
   userId: number;
   playerNumber: 1 | 2;
   socket: WebSocket;
-  username: string;
+  displayName: string;
   connected: boolean;
 }
 
@@ -18,7 +18,7 @@ export interface GameSession {
   players: Map<number, PlayerConnection>;
   originalPlayers: Map<
     number,
-    { userId: number; username: string; playerNumber: 1 | 2 }
+    { userId: number; displayName: string; playerNumber: 1 | 2 }
   >;
   status: "waiting" | "active" | "finished" | "cancelled";
   createdAt: Date;
@@ -97,7 +97,7 @@ export class GameManager {
         userId: user.userId,
         playerNumber: originalPlayer.playerNumber,
         socket,
-        username: user.username,
+        displayName: user.displayName,
         connected: true,
       };
 
@@ -121,7 +121,7 @@ export class GameManager {
           gameSession.game.resume();
           this.broadcastToGame(gameSession, {
             type: "game_resumed",
-            resumedBy: user.username,
+            resumedBy: user.displayName,
           });
         }
       }
@@ -134,7 +134,7 @@ export class GameManager {
           gameSession.game.resume();
           this.broadcastToGame(gameSession, {
             type: "game_resumed",
-            resumedBy: user.username,
+            resumedBy: user.displayName,
           });
         }
       }
@@ -159,14 +159,14 @@ export class GameManager {
       userId: user.userId,
       playerNumber: playerNumber as 1 | 2,
       socket,
-      username: user.username,
+      displayName: user.displayName,
       connected: true,
     };
 
     gameSession.players.set(user.userId, playerConnection);
     gameSession.originalPlayers.set(user.userId, {
       userId: user.userId,
-      username: user.username,
+      displayName: user.displayName,
       playerNumber: playerNumber as 1 | 2,
     });
 
@@ -243,7 +243,7 @@ export class GameManager {
           gameSession.game.pause();
           this.broadcastToGame(gameSession, {
             type: "game_paused",
-            pausedBy: player.username,
+            pausedBy: player.displayName,
           });
         }
         break;
@@ -252,7 +252,7 @@ export class GameManager {
           gameSession.game.resume();
           this.broadcastToGame(gameSession, {
             type: "game_resumed",
-            resumedBy: player.username,
+            resumedBy: player.displayName,
           });
         }
         break;
@@ -283,7 +283,7 @@ export class GameManager {
     this.broadcastToGame(gameSession, {
       type: "player_disconnected",
       playerNumber: player.playerNumber,
-      username: player.username,
+      displayName: player.displayName,
     });
 
     if (gameSession.status === "active") {
@@ -342,7 +342,7 @@ export class GameManager {
       type: "game_started",
       players: Array.from(gameSession.players.values()).map((p) => ({
         playerNumber: p.playerNumber,
-        username: p.username,
+        displayName: p.displayName,
       })),
     });
 

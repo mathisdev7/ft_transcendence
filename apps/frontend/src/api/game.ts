@@ -23,7 +23,7 @@ interface GameInfo {
   gameState: GameState;
   players: Array<{
     playerNumber: 1 | 2;
-    username: string;
+    displayName: string;
     connected: boolean;
   }>;
   createdAt: string;
@@ -125,6 +125,14 @@ class GameAPI {
 
   async getGameHistory(): Promise<GameHistoryResponse> {
     return this.fetchWithAuth("/games/history");
+  }
+
+  async getUserGameStats(
+    userId?: number
+  ): Promise<GameHistoryResponse["stats"]> {
+    const endpoint = userId ? `/user/${userId}/history` : "/user/history";
+    const response = await this.fetchWithAuth(endpoint);
+    return response.stats;
   }
 
   async sendGameControl(

@@ -14,6 +14,8 @@ export enum ViewType {
   PLAY_ONLINE = "play-online",
   TOURNAMENT = "tournament",
   TOURNAMENT_GAME = "tournament-game",
+  PROFILE_VIEW = "profile-view",
+  PROFILE_EDIT = "profile-edit",
   DOCS = "docs",
 }
 
@@ -151,6 +153,8 @@ export class Router {
       [ViewType.PLAY_ONLINE]: "#/play/online",
       [ViewType.TOURNAMENT]: "#/tournament",
       [ViewType.TOURNAMENT_GAME]: "#/tournament/game",
+      [ViewType.PROFILE_VIEW]: "#/profile",
+      [ViewType.PROFILE_EDIT]: "#/profile/edit",
       [ViewType.DOCS]: "#/docs",
     };
     return hashMap[viewType] || "#/login";
@@ -159,6 +163,10 @@ export class Router {
   private getViewFromHash(hash: string): ViewType {
     const cleanHash = hash.startsWith("#") ? hash : `#${hash}`;
     const pathOnly = cleanHash.split("?")[0];
+
+    if (pathOnly.startsWith("#/profile/") && pathOnly !== "#/profile/edit") {
+      return ViewType.PROFILE_VIEW;
+    }
 
     const viewMap: Record<string, ViewType> = {
       "#/login": ViewType.LOGIN,
@@ -174,6 +182,8 @@ export class Router {
       "#/play/online": ViewType.PLAY_ONLINE,
       "#/tournament": ViewType.TOURNAMENT,
       "#/tournament/game": ViewType.TOURNAMENT_GAME,
+      "#/profile": ViewType.PROFILE_VIEW,
+      "#/profile/edit": ViewType.PROFILE_EDIT,
       "#/docs": ViewType.DOCS,
       "#/": ViewType.LOGIN,
       "#": ViewType.LOGIN,

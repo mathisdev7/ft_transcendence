@@ -47,7 +47,6 @@ export async function loginVerifyRoute(fastify: FastifyInstance) {
                       properties: {
                         id: { type: "number" },
                         email: { type: "string" },
-                        username: { type: "string" },
                         display_name: { type: "string" },
                         avatar_url: { type: "string" },
                         is_verified: { type: "boolean" },
@@ -113,9 +112,9 @@ export async function loginVerifyRoute(fastify: FastifyInstance) {
           {
             userId: user.id,
             email: user.email,
-            username: user.username,
+            displayName: user.display_name,
           },
-          { expiresIn: "15m" }
+          { expiresIn: "7d" }
         );
 
         const session = await createSession(
@@ -142,7 +141,6 @@ export async function loginVerifyRoute(fastify: FastifyInstance) {
           user: {
             id: user.id,
             email: user.email,
-            username: user.username,
             display_name: user.display_name,
             avatar_url: user.avatar_url,
             is_verified: user.is_verified,

@@ -10,7 +10,6 @@ const updatePasswordSchema = z.object({
 const updateUserSchema = z.object({
   userId: z.number().positive("user id must be positive"),
   email: z.string().email().optional(),
-  username: z.string().min(1).optional(),
   displayName: z.string().min(1).optional(),
   avatarUrl: z.string().url().optional(),
 });
@@ -27,7 +26,6 @@ export const getUserById = async (userId: number) => {
   return {
     id: user.id,
     email: user.email,
-    username: user.username,
     display_name: user.display_name,
     avatar_url: user.avatar_url,
     is_verified: user.is_verified,
@@ -50,7 +48,6 @@ export const getUserByEmail = async (email: string) => {
   return {
     id: user.id,
     email: user.email,
-    username: user.username,
     display_name: user.display_name,
     avatar_url: user.avatar_url,
     is_verified: user.is_verified,
@@ -102,7 +99,6 @@ export const updateUser = async (
   userId: number,
   updates: {
     email?: string;
-    username?: string;
     displayName?: string;
     avatarUrl?: string;
   }
@@ -128,17 +124,6 @@ export const updateUser = async (
     }
     fields.push("email = ?");
     values.push(updates.email);
-  }
-
-  if (updates.username) {
-    const existingUser = db
-      .prepare("SELECT id FROM users WHERE username = ? AND id != ?")
-      .get(updates.username, userId);
-    if (existingUser) {
-      throw new Error("username already exists");
-    }
-    fields.push("username = ?");
-    values.push(updates.username);
   }
 
   if (updates.displayName) {

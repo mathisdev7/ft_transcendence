@@ -40,8 +40,7 @@ const createUsersTable = `
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE NOT NULL,
-    username TEXT UNIQUE NOT NULL,
-    display_name TEXT NOT NULL,
+    display_name TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     avatar_url TEXT,
     is_verified BOOLEAN DEFAULT FALSE,
@@ -108,7 +107,7 @@ const createEmailVerificationCodesTable = `
 
 const createIndexes = [
   "CREATE INDEX IF NOT EXISTS idx_users_email ON users (email)",
-  "CREATE INDEX IF NOT EXISTS idx_users_username ON users (username)",
+  "CREATE INDEX IF NOT EXISTS idx_users_display_name ON users (display_name)",
   "CREATE INDEX IF NOT EXISTS idx_tokens_user_id ON tokens (user_id)",
   "CREATE INDEX IF NOT EXISTS idx_tokens_token ON tokens (token)",
   "CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions (user_id)",
@@ -144,6 +143,46 @@ export function initDatabase() {
     });
 
     db.exec(createUpdateTrigger);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS friends (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        friend_id INTEGER NOT NULL,
+        status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'blocked')),
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+        FOREIGN KEY (friend_id) REFERENCES users (id) ON DELETE CASCADE,
+        UNIQUE(user_id, friend_id)
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS user_presence (
+        user_id INTEGER PRIMARY KEY,
+        is_online BOOLEAN DEFAULT FALSE,
+        last_seen DATETIME DEFAULT CURRENT_TIMESTAMP,
+        socket_id TEXT,
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+      )
+    `);
+
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_friends_user_id ON friends (user_id);
+    `);
+
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_friends_friend_id ON friends (friend_id);
+    `);
+
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_friends_status ON friends (status);
+    `);
+
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_user_presence_online ON user_presence (is_online);
+    `);
 
     console.log("database initialized successfully");
   } catch (error) {

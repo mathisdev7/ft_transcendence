@@ -347,7 +347,7 @@ export async function tournamentRoutes(fastify: FastifyInstance) {
 
         const totalTournaments = tournaments.length;
         const tournamentsWon = tournaments.filter(
-          (t) => t.winner_name === user.username
+          (t) => t.winner_name === user.displayName
         ).length;
         const winRate =
           totalTournaments > 0

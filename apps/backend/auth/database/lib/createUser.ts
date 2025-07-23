@@ -1,5 +1,4 @@
 import bcrypt from "bcrypt";
-import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { db } from "../init";
 
@@ -22,12 +21,23 @@ export const createUser = async (email: string, password: string) => {
     throw new Error("email already exists");
   }
 
+  const displayName = email.split("@")[0];
+
+  const displayNameExists = db
+    .prepare("SELECT * FROM users WHERE display_name = ?")
+    .get(displayName);
+
+  let finalDisplayName = displayName;
+  if (displayNameExists) {
+    finalDisplayName = `${displayName}_${Math.floor(Math.random() * 1000)}`;
+  }
+
   const passwordHash = await bcrypt.hash(password, 10);
   const user = db
     .prepare(
-      "INSERT INTO users (email, password_hash, username, display_name, avatar_url) VALUES (?, ?, ?, ?, ?)"
+      "INSERT INTO users (email, password_hash, display_name, avatar_url) VALUES (?, ?, ?, ?)"
     )
-    .run(email, passwordHash, uuidv4(), email.split("@")[0], "");
+    .run(email, passwordHash, finalDisplayName, "");
 
   return user.lastInsertRowid;
 };

@@ -25,7 +25,7 @@ interface GameState {
 
 interface Player {
   playerNumber: 1 | 2;
-  username: string;
+  displayName: string;
   connected: boolean;
 }
 
@@ -328,7 +328,7 @@ export class PlayOnlinePage extends BaseComponent {
     }
 
     const scorerName =
-      this.players.find((p) => p.playerNumber === data.scorer)?.username ||
+      this.players.find((p) => p.playerNumber === data.scorer)?.displayName ||
       `Player ${data.scorer}`;
     Toast.success(`Goal scored by ${scorerName}!`);
   }
@@ -355,16 +355,18 @@ export class PlayOnlinePage extends BaseComponent {
       this.updatePlayersDisplay();
     }
 
-    Toast.warning(`${data.username} disconnected`);
+    Toast.warning(
+      `${data.displayName || `Player ${data.playerNumber}`} disconnected`
+    );
     this.showWaitingOverlay("Player disconnected. Waiting for reconnection...");
   }
 
   private handleGamePaused(data: any): void {
-    Toast.info(`Game paused by ${data.pausedBy}`);
+    Toast.info(`Game paused by ${data.pausedBy || "a player"}`);
   }
 
   private handleGameResumed(data: any): void {
-    Toast.info(`Game resumed by ${data.resumedBy}`);
+    Toast.info(`Game resumed by ${data.resumedBy || "a player"}`);
   }
 
   private handleWebSocketError(_error: Event): void {
@@ -477,10 +479,10 @@ export class PlayOnlinePage extends BaseComponent {
     ) as HTMLElement;
     if (this.myPlayerNumber === 1) {
       controlsText.textContent =
-        "You are Player 1 (left paddle) - Use W/S keys or ↑/↓ arrows";
+        "🏓 You control the LEFT paddle - Use W/S keys or ↑/↓ arrows";
     } else if (this.myPlayerNumber === 2) {
       controlsText.textContent =
-        "You are Player 2 (right paddle) - Use W/S keys or ↑/↓ arrows";
+        "🏓 You control the RIGHT paddle - Use W/S keys or ↑/↓ arrows";
     }
   }
 
@@ -491,29 +493,35 @@ export class PlayOnlinePage extends BaseComponent {
 
     if (this.players.length === 0) {
       playersList.innerHTML =
-        '<div class="text-center text-gray-500">Loading players...</div>';
+        '<div class="text-center text-muted-foreground">Loading players...</div>';
       return;
     }
 
-    playersList.innerHTML = this.players
+    const sortedPlayers = [...this.players].sort(
+      (a, b) => a.playerNumber - b.playerNumber
+    );
+
+    playersList.innerHTML = sortedPlayers
       .map(
         (player) => `
-      <div class="flex items-center justify-between p-2 bg-gray-800 rounded">
-        <div class="flex items-center space-x-2">
-          <span class="text-sm font-medium">Player ${player.playerNumber}</span>
-          <span class="text-xs text-gray-400">${player.username}</span>
+      <div class="flex items-center justify-between p-3 bg-muted rounded-lg">
+        <div class="flex items-center space-x-3">
+          <div class="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
+            ${player.playerNumber}
+          </div>
+          <div>
+            <div class="font-medium text-foreground">${player.displayName}</div>
+            <div class="text-xs text-muted-foreground">
+              ${player.playerNumber === 1 ? "Left Paddle" : "Right Paddle"}
+            </div>
+          </div>
+        </div>
+        <div class="text-right">
           ${
             player.playerNumber === this.myPlayerNumber
-              ? '<span class="text-xs bg-blue-600 px-2 py-1 rounded">You</span>'
-              : ""
+              ? '<span class="bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-medium">You</span>'
+              : '<span class="text-muted-foreground text-xs">Opponent</span>'
           }
-        </div>
-        <div class="flex items-center space-x-2">
-          <span class="${
-            player.connected ? "text-green-400" : "text-red-400"
-          } text-xs">
-            ${player.connected ? "● Online" : "● Offline"}
-          </span>
         </div>
       </div>
     `
@@ -550,7 +558,7 @@ export class PlayOnlinePage extends BaseComponent {
     const scoreText = this.element.querySelector("#final-score") as HTMLElement;
 
     const winnerPlayer = this.players.find((p) => p.playerNumber === winner);
-    const winnerName = winnerPlayer?.username || `Player ${winner}`;
+    const winnerName = winnerPlayer?.displayName || `Player ${winner}`;
 
     winnerText.textContent =
       winnerPlayer?.playerNumber === this.myPlayerNumber

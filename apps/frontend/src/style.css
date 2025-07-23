@@ -6,7 +6,7 @@
   --color-accent: oklch(0.3132 0 0);
   --color-muted: oklch(0.7122 0 0);
   --color-border: oklch(0.2809 0 0);
-  --color-error: oklch(0.3123 0.0852 29.7877);
+  --color-error: oklch(0.8 0.2 29.7877);
   --color-success: oklch(0.8003 0.1821 151.711);
   --color-warning: oklch(0.8369 0.1644 84.4286);
   --color-info: oklch(0.7137 0.1434 254.624);
@@ -83,6 +83,48 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-accent);
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 50;
+  min-width: 12rem;
+  margin-top: 0.5rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 0.5rem 0;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.dropdown-divider {
+  height: 1px;
+  margin: 0.5rem 0;
+  background-color: var(--border-primary);
 }
 
 input,

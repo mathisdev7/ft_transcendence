@@ -10,7 +10,10 @@ import {
   type TournamentHistoryResponse,
 } from "../api/tournament";
 import { BaseComponent } from "../components/BaseComponent";
+import { FriendsWidget } from "../components/FriendsWidget";
+import { RecentActivityWidget } from "../components/RecentActivityWidget";
 import { Toast } from "../components/Toast";
+import { userSearchModal } from "../components/UserSearchModal";
 import { navigateToView, ViewType } from "../utils/navigation";
 
 export class DashboardPage extends BaseComponent {
@@ -21,9 +24,13 @@ export class DashboardPage extends BaseComponent {
   private isLoadingGameHistory = false;
   private tournamentHistory: TournamentHistoryResponse | null = null;
   private isLoadingTournamentHistory = false;
+  private recentActivityWidget: RecentActivityWidget;
+  private friendsWidget: FriendsWidget;
 
   constructor() {
     super("div", "min-h-screen bg-background");
+    this.recentActivityWidget = new RecentActivityWidget();
+    this.friendsWidget = new FriendsWidget();
   }
 
   protected init(): void {
@@ -133,6 +140,147 @@ export class DashboardPage extends BaseComponent {
   }
 
   private renderPage(): void {
+    this.element.innerHTML = `
+      <nav class="navbar">
+        <div class="container-responsive">
+          <div class="flex justify-between items-center h-16">
+            <div class="flex items-center">
+              <h1 class="text-foreground text-xl font-bold">Dashboard</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+              <button id="search-users-btn" class="btn btn-ghost">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                Search Users
+              </button>
+              <div class="dropdown">
+                <button id="user-menu-btn" class="btn btn-ghost flex items-center space-x-2">
+                  <img
+                    src="${
+                      this.user?.avatar_url ||
+                      "https://ui-avatars.com/api/?name=" +
+                        encodeURIComponent(this.user?.display_name || "User") +
+                        "&background=random&color=fff&size=32"
+                    }"
+                    alt="Avatar"
+                    class="w-8 h-8 rounded-full"
+                  />
+                  <span class="text-sm font-medium">${
+                    this.user?.display_name || "User"
+                  }</span>
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </button>
+                <div id="user-menu" class="dropdown-menu hidden">
+                  <a href="#" id="view-profile-btn" class="dropdown-item">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                    My Profile
+                  </a>
+                  <a href="#" id="edit-profile-btn" class="dropdown-item">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                    Edit Profile
+                  </a>
+                  <div class="dropdown-divider"></div>
+                  <a href="#" id="logout-btn" class="dropdown-item">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                    </svg>
+                    Sign Out
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      ${this.renderMainContent()}
+    `;
+
+    if (!document.querySelector(".user-search-modal")) {
+      const modalElement = userSearchModal.render();
+      modalElement.classList.add("user-search-modal");
+      document.body.appendChild(modalElement);
+    }
+
+    const friendsContainer = this.element.querySelector(
+      "#friends-widget-container"
+    );
+    if (friendsContainer) {
+      friendsContainer.appendChild(this.friendsWidget.render());
+    }
+
+    const activityContainer = this.element.querySelector(
+      "#recent-activity-container"
+    );
+    if (activityContainer) {
+      activityContainer.appendChild(this.recentActivityWidget.render());
+    }
+
+    this.setupEventListeners();
+  }
+
+  private renderMainContent(): string {
+    return `
+      <main class="container-responsive py-8">
+        ${this.renderWelcomeSection()}
+        ${this.renderQuickActions()}
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          <div class="lg:col-span-2">
+            ${this.renderGameStats()}
+            ${this.renderTournamentStats()}
+          </div>
+          <div class="lg:col-span-1 space-y-6">
+            <div id="friends-widget-container"></div>
+            <div id="recent-activity-container"></div>
+          </div>
+        </div>
+
+        ${this.renderModals()}
+      </main>
+    `;
+  }
+
+  private renderWelcomeSection(): string {
+    return `
+      <div class="mb-8">
+        <h2 class="text-3xl sm:text-4xl font-bold text-foreground mb-2">Dashboard</h2>
+        <p class="text-muted-foreground text-lg">Manage your gaming experience</p>
+      </div>
+    `;
+  }
+
+  private renderQuickActions(): string {
+    return `
+      <div class="card mb-8">
+        <div class="card-content">
+          <div class="flex flex-col lg:flex-row items-center justify-between space-y-6 lg:space-y-0">
+            <div class="text-center lg:text-left">
+              <h3 class="text-2xl sm:text-3xl font-bold text-foreground mb-3">🏓 Ready to Play Pong?</h3>
+              <p class="text-muted-foreground text-base sm:text-lg">Challenge other players online or compete in tournaments</p>
+            </div>
+            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6 w-full lg:w-auto">
+              <button id="play-btn" class="btn btn-primary btn-lg font-bold">
+                🎮 Play Now
+              </button>
+              <button id="tournament-btn" class="btn btn-success btn-lg font-bold">
+                🏆 Tournament
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderGameStats(): string {
     const stats = this.gameHistory?.stats || {
       total_games: 0,
       games_won: 0,
@@ -140,226 +288,89 @@ export class DashboardPage extends BaseComponent {
       win_rate: 0,
     };
 
-    this.element.innerHTML = `
-      <nav class="navbar sticky top-0 z-50">
-        <div class="container-responsive">
-          <div class="flex flex-col sm:flex-row justify-between items-center h-auto sm:h-16 py-4 sm:py-0">
-            <div class="flex items-center mb-4 sm:mb-0">
-              <h1 class="text-foreground text-xl sm:text-2xl font-bold">TRANSCENDENCE</h1>
-            </div>
-
-            <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
-              <span class="text-muted-foreground text-sm sm:text-base text-center">
-                Welcome back, <span class="text-foreground font-semibold">${
-                  this.user?.display_name || "User"
-                }</span>
-              </span>
-              <div class="flex space-x-3">
-                <button id="docs-btn" class="btn btn-secondary btn-sm">
-                  📚 Docs
-                </button>
-                <button id="logout-btn" class="btn btn-destructive btn-sm">
-                  Logout
-                </button>
-              </div>
-            </div>
-          </div>
+    return `
+      <div class="card mb-8">
+        <div class="card-header">
+          <h3 class="card-title">🎮 Game Statistics</h3>
         </div>
-      </nav>
-
-      <main class="container-responsive py-6 sm:py-8">
-        <div class="mb-8">
-          <h2 class="text-3xl sm:text-4xl font-bold text-foreground mb-2">Dashboard</h2>
-          <p class="text-muted-foreground text-lg">Manage your gaming experience</p>
+        <div class="card-content">
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="card">
+              <div class="card-content p-4 text-center">
+                <div class="text-2xl sm:text-3xl font-bold text-foreground mb-1">${stats.total_games}</div>
+                <div class="text-xs sm:text-sm text-muted-foreground">Games Played</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-content p-4 text-center">
+                <div class="text-2xl sm:text-3xl font-bold text-success mb-1">${stats.games_won}</div>
+                <div class="text-xs sm:text-sm text-muted-foreground">Games Won</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-content p-4 text-center">
+                <div class="text-2xl sm:text-3xl font-bold text-destructive mb-1">${stats.games_lost}</div>
+                <div class="text-xs sm:text-sm text-muted-foreground">Games Lost</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-content p-4 text-center">
+                <div class="text-2xl sm:text-3xl font-bold text-foreground mb-1">${stats.win_rate}%</div>
+                <div class="text-xs sm:text-sm text-muted-foreground">Win Rate</div>
+              </div>
+            </div>
+          </div>
+          <button id="view-game-history-btn" class="btn btn-primary w-full">
+            📊 View Game History
+          </button>
         </div>
+      </div>
+    `;
+  }
 
-        <div class="card mb-8">
-          <div class="card-content">
-            <div class="flex flex-col lg:flex-row items-center justify-between space-y-6 lg:space-y-0">
-              <div class="text-center lg:text-left">
-                <h3 class="text-2xl sm:text-3xl font-bold text-foreground mb-3">🏓 Ready to Play Pong?</h3>
-                <p class="text-muted-foreground text-base sm:text-lg">Challenge other players online or compete in tournaments</p>
-              </div>
-              <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6 w-full lg:w-auto">
-                <button id="play-btn" class="btn btn-primary btn-lg font-bold">
-                  🎮 Play Now
-                </button>
-                <button id="tournament-btn" class="btn btn-success btn-lg font-bold">
-                  🏆 Tournament
-                </button>
-              </div>
-            </div>
-          </div>
+  private renderTournamentStats(): string {
+    return `
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">🏆 Tournament Statistics</h3>
         </div>
-        <div class="card mb-8">
-          <div class="card-header">
-            <h3 class="card-title">👤 Profile Information</h3>
-          </div>
-          <div class="card-content">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div class="card">
-                <div class="card-content p-4">
-                  <div class="text-sm text-muted-foreground mb-1">Email</div>
-                  <div class="text-foreground font-medium break-all">${
-                    this.user?.email || "N/A"
-                  }</div>
-                </div>
+        <div class="card-content">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+            <div class="card">
+              <div class="card-content p-4 text-center">
+                <div class="text-3xl sm:text-4xl font-bold text-foreground mb-2">${
+                  this.tournamentHistory?.stats.total_tournaments || 0
+                }</div>
+                <div class="text-sm text-muted-foreground">Tournaments Played</div>
               </div>
-              <div class="card">
-                <div class="card-content p-4">
-                  <div class="text-sm text-muted-foreground mb-1">Username</div>
-                  <div class="text-foreground font-medium">${
-                    this.user?.username || "N/A"
-                  }</div>
-                </div>
+            </div>
+            <div class="card">
+              <div class="card-content p-4 text-center">
+                <div class="text-3xl sm:text-4xl font-bold text-warning mb-2">${
+                  this.tournamentHistory?.stats.tournaments_won || 0
+                }</div>
+                <div class="text-sm text-muted-foreground">Tournaments Won</div>
               </div>
-              <div class="card">
-                <div class="card-content p-4">
-                  <div class="text-sm text-muted-foreground mb-1">Display Name</div>
-                  <div class="text-foreground font-medium">${
-                    this.user?.display_name || "N/A"
-                  }</div>
-                </div>
-              </div>
-              <div class="card">
-                <div class="card-content p-4">
-                  <div class="text-sm text-muted-foreground mb-1">Status</div>
-                  <div class="font-medium">
-                    ${
-                      this.user?.is_verified
-                        ? '<span class="text-success">✓ Verified</span>'
-                        : '<span class="text-destructive">✗ Not Verified</span>'
-                    }
-                  </div>
-                </div>
-              </div>
-              <div class="card sm:col-span-2">
-                <div class="card-content p-4">
-                  <div class="text-sm text-muted-foreground mb-1">Member Since</div>
-                  <div class="text-foreground font-medium">${
-                    this.user?.created_at
-                      ? new Date(this.user.created_at).toLocaleDateString()
-                      : "N/A"
-                  }</div>
-                </div>
+            </div>
+            <div class="card">
+              <div class="card-content p-4 text-center">
+                <div class="text-3xl sm:text-4xl font-bold text-foreground mb-2">${
+                  this.tournamentHistory?.stats.win_rate || 0
+                }%</div>
+                <div class="text-sm text-muted-foreground">Tournament Win Rate</div>
               </div>
             </div>
           </div>
+          <button id="view-tournament-history-btn" class="btn btn-success w-full text-lg font-semibold">
+            🏆 View Tournament History
+          </button>
         </div>
+      </div>
+    `;
+  }
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <div class="card">
-            <div class="card-header">
-              <h3 class="card-title">⚙️ Account Actions</h3>
-            </div>
-            <div class="card-content">
-              <div class="space-y-4">
-                <button id="refresh-status-btn" class="btn btn-secondary w-full">
-                  🔄 Refresh Status
-                </button>
-                <button id="change-password-btn" class="btn btn-secondary w-full">
-                  🔒 Change Password
-                </button>
-                ${
-                  !this.user?.is_verified
-                    ? `
-                  <button id="resend-verification-btn" class="btn btn-primary w-full">
-                    📧 Resend Verification Email
-                  </button>
-                `
-                    : ""
-                }
-              </div>
-            </div>
-          </div>
-
-
-          <div class="card">
-            <div class="card-header">
-              <h3 class="card-title">🎮 Game Statistics</h3>
-            </div>
-            <div class="card-content">
-              <div class="grid grid-cols-2 gap-4 mb-6">
-                <div class="card">
-                  <div class="card-content p-4 text-center">
-                    <div class="text-2xl sm:text-3xl font-bold text-foreground mb-1">${
-                      stats.total_games
-                    }</div>
-                    <div class="text-xs sm:text-sm text-muted-foreground">Games Played</div>
-                  </div>
-                </div>
-                <div class="card">
-                  <div class="card-content p-4 text-center">
-                    <div class="text-2xl sm:text-3xl font-bold text-success mb-1">${
-                      stats.games_won
-                    }</div>
-                    <div class="text-xs sm:text-sm text-muted-foreground">Games Won</div>
-                  </div>
-                </div>
-                <div class="card">
-                  <div class="card-content p-4 text-center">
-                    <div class="text-2xl sm:text-3xl font-bold text-destructive mb-1">${
-                      stats.games_lost
-                    }</div>
-                    <div class="text-xs sm:text-sm text-muted-foreground">Games Lost</div>
-                  </div>
-                </div>
-                <div class="card">
-                  <div class="card-content p-4 text-center">
-                    <div class="text-2xl sm:text-3xl font-bold text-foreground mb-1">${
-                      stats.win_rate
-                    }%</div>
-                    <div class="text-xs sm:text-sm text-muted-foreground">Win Rate</div>
-                  </div>
-                </div>
-              </div>
-              <button id="view-game-history-btn" class="btn btn-primary w-full">
-                📊 View Game History
-              </button>
-            </div>
-          </div>
-        </div>
-
-
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title">🏆 Tournament Statistics</h3>
-          </div>
-          <div class="card-content">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-              <div class="card">
-                <div class="card-content p-4 text-center">
-                  <div class="text-3xl sm:text-4xl font-bold text-foreground mb-2">${
-                    this.tournamentHistory?.stats.total_tournaments || 0
-                  }</div>
-                  <div class="text-sm text-muted-foreground">Tournaments Played</div>
-                </div>
-              </div>
-              <div class="card">
-                <div class="card-content p-4 text-center">
-                  <div class="text-3xl sm:text-4xl font-bold text-warning mb-2">${
-                    this.tournamentHistory?.stats.tournaments_won || 0
-                  }</div>
-                  <div class="text-sm text-muted-foreground">Tournaments Won</div>
-                </div>
-              </div>
-              <div class="card">
-                <div class="card-content p-4 text-center">
-                  <div class="text-3xl sm:text-4xl font-bold text-foreground mb-2">${
-                    this.tournamentHistory?.stats.win_rate || 0
-                  }%</div>
-                  <div class="text-sm text-muted-foreground">Tournament Win Rate</div>
-                </div>
-              </div>
-            </div>
-            <button id="view-tournament-history-btn" class="btn btn-success w-full text-lg font-semibold">
-              🏆 View Tournament History
-            </button>
-          </div>
-        </div>
-      </main>
-
-
+  private renderModals(): string {
+    return `
       <div id="game-history-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden p-4">
         <div class="card w-full max-w-4xl max-h-[90vh] overflow-hidden">
           <div class="card-header flex-row justify-between items-center">
@@ -466,9 +477,7 @@ export class DashboardPage extends BaseComponent {
 
         const currentUser = this.user;
         const isWinner =
-          currentUser &&
-          tournament.winner_name ===
-            (currentUser.display_name || currentUser.username);
+          currentUser && tournament.winner_name === currentUser.display_name;
 
         const resultColor = isWinner ? "text-warning" : "text-muted-foreground";
         const resultIcon = isWinner ? "🏆" : "🥈";
@@ -569,6 +578,9 @@ export class DashboardPage extends BaseComponent {
   }
 
   private setupEventListeners(): void {
+    if (this.eventListenersSetup) return;
+    this.eventListenersSetup = true;
+
     const logoutBtn = this.element.querySelector(
       "#logout-btn"
     ) as HTMLButtonElement;
@@ -671,6 +683,134 @@ export class DashboardPage extends BaseComponent {
         this.hideTournamentHistoryModal();
       }
     });
+
+    this.setupQuickActionButtons();
+    this.setupModals();
+    this.setupUserMenu();
+  }
+
+  private setupQuickActionButtons(): void {
+    const playBtn = this.element.querySelector(
+      "#play-btn"
+    ) as HTMLButtonElement;
+    playBtn?.addEventListener("click", () => {
+      navigateToView(ViewType.PLAY_MENU);
+    });
+
+    const tournamentBtn = this.element.querySelector(
+      "#tournament-btn"
+    ) as HTMLButtonElement;
+    tournamentBtn?.addEventListener("click", () => {
+      navigateToView(ViewType.TOURNAMENT);
+    });
+  }
+
+  private setupModals(): void {
+    const viewGameHistoryBtn = this.element.querySelector(
+      "#view-game-history-btn"
+    ) as HTMLButtonElement;
+    viewGameHistoryBtn?.addEventListener("click", () => {
+      this.showGameHistoryModal();
+    });
+
+    const viewTournamentHistoryBtn = this.element.querySelector(
+      "#view-tournament-history-btn"
+    ) as HTMLButtonElement;
+    viewTournamentHistoryBtn?.addEventListener("click", () => {
+      this.showTournamentHistoryModal();
+    });
+
+    const closeModalBtn = this.element.querySelector(
+      "#close-modal-btn"
+    ) as HTMLButtonElement;
+    closeModalBtn?.addEventListener("click", () => {
+      this.hideGameHistoryModal();
+    });
+
+    const closeTournamentModalBtn = this.element.querySelector(
+      "#close-tournament-modal-btn"
+    ) as HTMLButtonElement;
+    closeTournamentModalBtn?.addEventListener("click", () => {
+      this.hideTournamentHistoryModal();
+    });
+
+    const modal = this.element.querySelector(
+      "#game-history-modal"
+    ) as HTMLElement;
+    modal?.addEventListener("click", (e) => {
+      if (e.target === modal) {
+        this.hideGameHistoryModal();
+      }
+    });
+
+    const tournamentModal = this.element.querySelector(
+      "#tournament-history-modal"
+    ) as HTMLElement;
+    tournamentModal?.addEventListener("click", (e) => {
+      if (e.target === tournamentModal) {
+        this.hideTournamentHistoryModal();
+      }
+    });
+  }
+
+  private setupUserMenu(): void {
+    const userMenuBtn = this.element.querySelector(
+      "#user-menu-btn"
+    ) as HTMLButtonElement;
+    const userMenu = this.element.querySelector("#user-menu") as HTMLElement;
+    const searchUsersBtn = this.element.querySelector(
+      "#search-users-btn"
+    ) as HTMLButtonElement;
+    const viewProfileBtn = this.element.querySelector(
+      "#view-profile-btn"
+    ) as HTMLAnchorElement;
+    const editProfileBtn = this.element.querySelector(
+      "#edit-profile-btn"
+    ) as HTMLAnchorElement;
+    const logoutBtn = this.element.querySelector(
+      "#logout-btn"
+    ) as HTMLAnchorElement;
+
+    if (userMenuBtn && userMenu) {
+      userMenuBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        userMenu.classList.toggle("hidden");
+      });
+
+      document.addEventListener("click", () => {
+        userMenu.classList.add("hidden");
+      });
+    }
+
+    if (searchUsersBtn) {
+      searchUsersBtn.addEventListener("click", () => {
+        userSearchModal.open();
+      });
+    }
+
+    if (viewProfileBtn) {
+      viewProfileBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (this.user) {
+          window.location.hash = `#/profile/${this.user.id}`;
+          window.dispatchEvent(new CustomEvent("hashchange"));
+        }
+      });
+    }
+
+    if (editProfileBtn) {
+      editProfileBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        navigateToView(ViewType.PROFILE_EDIT);
+      });
+    }
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.handleLogout();
+      });
+    }
   }
 
   private showGameHistoryModal(): void {
@@ -701,14 +841,12 @@ export class DashboardPage extends BaseComponent {
     modal.classList.add("hidden");
   }
 
-  private async handleLogout(): Promise<void> {
-    try {
-      await authAPI.logout();
-      Toast.success("Logged out successfully");
-    } catch (error) {
-      console.error("Logout error:", error);
-      Toast.error("Logout failed");
-    }
+  private handleLogout(): void {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("user");
+    window.dispatchEvent(new CustomEvent("auth:logout"));
+    Toast.success("Successfully signed out");
+    navigateToView(ViewType.LOGIN);
   }
 
   private handleChangePassword(): void {
