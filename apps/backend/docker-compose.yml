@@ -31,6 +31,7 @@ services:
       - elk
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
+      - ./ELK/certs:/usr/share/elasticsearch/config/certs:ro
     healthcheck:
       test: ["CMD-SHELL", "curl -k -u elastic:${ELASTIC_PASSWORD} -s -f https://localhost:9200/_cluster/health || exit 1"]
       interval: 30s
@@ -60,6 +61,8 @@ services:
     depends_on:
       elasticsearch:
         condition: service_healthy
+    volumes:
+      - ./ELK/certs:/usr/share/kibana/config/certs:ro
     healthcheck:
       test: ["CMD-SHELL", "curl -k -s -f https://localhost:5601/api/status || exit 1"]
       interval: 30s
@@ -91,6 +94,7 @@ services:
         condition: service_healthy
     volumes:
       - ./ELK/Logstash/pipeline:/usr/share/logstash/pipeline
+      - ./ELK/certs:/usr/share/logstash/config/certs:ro
 
   auth-service:
       build:
