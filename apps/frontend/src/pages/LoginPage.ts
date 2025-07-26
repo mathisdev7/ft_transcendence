@@ -113,7 +113,7 @@ export class LoginPage extends BaseComponent {
 
         <div class="text-center mt-8">
           <p class="text-muted-foreground text-sm">
-            © 2024 Transcendence • Built with ❤️ for gamers
+            © 2025 Transcendence • Built by mazeghou, nopareti, bepoisso, hduflos, mpeyre-s
           </p>
         </div>
       </div>
